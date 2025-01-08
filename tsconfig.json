@@ -1,0 +1,21 @@
+{
+  "compilerOptions": {
+    "target": "es2016",                         // Target ECMAScript version for the output
+    "module": "esnext",                         // Use ES module syntax (for bundlers like Webpack)
+    "moduleResolution": "node",                 // Resolve modules in a node-like manner
+    "strict": true,                             // Enable all strict type-checking options
+    "esModuleInterop": true,                    // Allow default imports from CommonJS modules
+    "skipLibCheck": true,                       // Skip type checking for library files
+    "forceConsistentCasingInFileNames": true,   // Enforce consistent file name casing
+    "outDir": "./dist",                         // Output directory for compiled files
+    "declaration": false,                       // Disable declaration file generation (.d.ts)
+    "sourceMap": true,                          // Generate source maps for debugging
+    "resolveJsonModule": true                   // Enable importing JSON modules
+  },
+  "include": [
+    "src/**/*.ts"                               // Include all TypeScript files in the src folder
+  ],
+  "exclude": [
+    "node_modules"                              // Exclude the node_modules folder from compilation
+  ]
+}
