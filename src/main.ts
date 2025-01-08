@@ -1,11 +1,10 @@
 import { Gomoku } from "./gomoku/Gomoku";
-import { GomokuEngine } from "./gomoku/GomokuEngine";
+// import { GomokuEngine } from "./gomoku/GomokuEngine";
 // import { GomokuEngine } from "./engine";
 
 const boardSize = 10;
-const gomoku = new Gomoku(boardSize);
-const engine = new GomokuEngine();
-const depth = 4;
+const lookAhead = 3;
+const gomoku = new Gomoku(boardSize, lookAhead);
 
 // UI
 const boardElement = document.getElementById("board")!;
@@ -40,7 +39,7 @@ function updateBoardUI() {
         const htmlCell = cell as HTMLElement;
         const col = parseInt(htmlCell.dataset.x!);
         const row = parseInt(htmlCell.dataset.y!);
-        const value = gomoku.getValueAt(row, col);
+        const value = gomoku.getValueAtRowCol(row, col);
 
         htmlCell.textContent = ""; // Clear the cell before updating
 
@@ -59,8 +58,8 @@ function updateBoardUI() {
 // Handle cell clicks (Player's turn)
 function handleCellClick(row: number, col: number) {
     // Check some condition
-    if (gomoku.getValueAt(row, col) !== 0 || gomoku.isGameOver()) return;
-    if (gomoku.getCurrentPlayer() <= 0) return; // not player turn to move
+    if (gomoku.getValueAtRowCol(row, col) !== 0 || gomoku.isWinningBoard()) return;
+    // if (gomoku.getCurrentPlayer() <= 0) return; // not player turn to move
 
     // Player make his move
     makeMove(gomoku.toIndex(row, col));
@@ -74,16 +73,31 @@ function handleCellClick(row: number, col: number) {
         gameStatusElement.textContent = "It's a draw!";
         return;
     }
-    if (gomoku.checkWinFrom(row, col)) {
+    if (gomoku.isWinningBoard()) {
         gameStatusElement.textContent = currentPlayer === -1 ? `Player wins!` : "Bot win";
         return;
     }
 
     // Bot move
-    if (currentPlayer === -1) {
-        botStatusElement.textContent = "Thinking...";
-        setTimeout(() => botMove(), 1);
-    }
+    // if (currentPlayer === -1) {
+    //     botStatusElement.textContent = "Thinking...";
+    //     setTimeout(() => botMove(), 1);
+    // }
+
+    // Test possible move
+    // var moves = gomoku.getAvailableMoves();
+    // for (const move of moves) {
+    //     makeMove(move);
+    // }
+
+    var patterns_max = gomoku.engine.countPatterns(gomoku.bitboardMax);
+    var patterns_min = gomoku.engine.countPatterns(gomoku.bitboardMin);
+    console.log(`Patterns for Player Max (bitboardMax) ${gomoku.bitboardMax.toString(2)}:`);
+    console.log(patterns_max);
+    
+    console.log(`Patterns for Player Min (bitboardMin) ${gomoku.bitboardMin}:`);
+    console.log(patterns_min);
+
 }
 
 function makeMove(index: number) {
@@ -94,7 +108,7 @@ function makeMove(index: number) {
 // Bot makes a random move
 function botMove() {
     var start = Date.now();
-    const move = engine.findBestMove(gomoku, depth, false);
+    const move = gomoku.engine.findBestMove(gomoku, gomoku.currentPlayer);
     var dt = Date.now() - start;
     botStatusElement.textContent = "Time: " + dt;
     if (move) makeMove(move);

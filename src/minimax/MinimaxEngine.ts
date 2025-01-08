@@ -20,8 +20,8 @@ export abstract class MinimaxEngine<TGameState, TGameMove, TStateHash> {
     public abstract getStateHash(state: TGameState): TStateHash;
     public abstract isTerminal(state: TGameState): boolean;
     public abstract getPossibleMoves(state: TGameState): TGameMove[];
-    public abstract makeMove(state: TGameState, move: TGameMove): void;
-    public abstract undoMove(state: TGameState, move: TGameMove): void;
+    public abstract makeMove(state: TGameState, move: TGameMove): boolean;
+    public abstract undoMove(state: TGameState, move: TGameMove): boolean;
 
     public negamax(state: TGameState, depth: number, alpha: number, beta: number, color: number): number {
         // Save alpha
@@ -31,15 +31,10 @@ export abstract class MinimaxEngine<TGameState, TGameMove, TStateHash> {
         var hash = this.getStateHash(state);
         var entry = this.transTable.get(hash);
         if (entry && entry.depth >= depth) {
-            if (entry.flag == FLAG_EXACT)
-                return entry.value;
-            else if (entry.flag == FLAG_LOWER)
-                alpha = Math.max(alpha, entry.value);
-            else if (entry.flag == FLAG_UPPER)
-                beta = Math.min(beta, entry.value);
-            
-            if (alpha >= beta)
-                return entry.value;
+            if (entry.flag == FLAG_EXACT) return entry.value;
+            else if (entry.flag == FLAG_LOWER && entry.value > alpha) alpha = entry.value;
+            else if (entry.flag == FLAG_UPPER && entry.value < beta) beta = entry.value
+            if (alpha >= beta) return entry.value;
         }
 
         // Check for leaf
@@ -48,37 +43,32 @@ export abstract class MinimaxEngine<TGameState, TGameMove, TStateHash> {
 
         // Calculate for child nodes
         const moves = this.getPossibleMoves(state);
-        var value = -Infinity;
+        var maxValue = -Infinity;
         for (const move of moves) {
             this.makeMove(state, move);
-            value = Math.max(value, -this.negamax(state, depth - 1, -beta, -alpha, -color));
+            const value = -this.negamax(state, depth - 1, -beta, -alpha, -color);
             this.undoMove(state, move);
-            alpha = Math.max(alpha, value);
+            if (value > maxValue) {
+                maxValue = value;
+                if (maxValue > alpha) alpha = maxValue;
+            }
             if (alpha >= beta) break;
         }
 
-        // Update cache table
-        var flag = FLAG_EXACT;
-        if (value <= alphaOrigin)
-            flag = FLAG_UPPER;
-        else if (value >= beta)
-            flag = FLAG_LOWER;
-        this.transTable.set(hash, {
-            value: value,
-            flag: flag,
-            depth: depth
-        });
-
-        return value;
+        // Update trans table
+        const flag = maxValue <= alphaOrigin ? FLAG_UPPER : maxValue >= beta ? FLAG_LOWER : FLAG_EXACT;
+        // const flag = maxValue <= alpha ? FLAG_UPPER : maxValue >= beta ? FLAG_LOWER : FLAG_EXACT;
+        this.transTable.set(hash, {value: maxValue, depth: depth, flag: flag});
+        return maxValue;
     }
 
-    public findBestMove(state: TGameState, color: number): TGameMove | null {
+    public findBestMove(state: TGameState, player: number): TGameMove | null {
         var bestMove = null;
         var bestValue = -Infinity;
         var moves = this.getPossibleMoves(state);
         for (const move of moves) {
             this.makeMove(state, move);
-            const value = -this.negamax(state, this.lookAhead - 1, -Infinity, Infinity, -color);
+            const value = -this.negamax(state, this.lookAhead - 1, -Infinity, Infinity, -player);
             this.undoMove(state, move);
             if (value > bestValue) {
                 bestMove = move;
@@ -86,6 +76,8 @@ export abstract class MinimaxEngine<TGameState, TGameMove, TStateHash> {
             }
             console.log(`|   move ${move}'s value = ` + value);
         }
+        var value = this.negamax(state, this.lookAhead, -Infinity, Infinity, player);
+        console.log(`|   root value = ` + value);
         return bestMove;
     }
 }

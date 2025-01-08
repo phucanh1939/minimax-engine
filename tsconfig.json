@@ -1,6 +1,6 @@
 {
   "compilerOptions": {
-    "target": "es2016",                         // Target ECMAScript version for the output
+    "target": "es2020",                         // Target ECMAScript version for the output
     "module": "esnext",                         // Use ES module syntax (for bundlers like Webpack)
     "moduleResolution": "node",                 // Resolve modules in a node-like manner
     "strict": true,                             // Enable all strict type-checking options
