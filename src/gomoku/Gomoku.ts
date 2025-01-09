@@ -1,4 +1,5 @@
 import { GomokuEngine, GomokuState } from "./GomokuEngine";
+import { GomokuEngineLv2 } from "./GomokuEngineLv2";
 
 export class Gomoku implements GomokuState{
     private boardSize: number = 10;
@@ -11,15 +12,11 @@ export class Gomoku implements GomokuState{
     constructor(boardSize: number, lookAhead: number) {
         this.boardSize = boardSize;
         this.boardLength = boardSize * boardSize;
-        this.engine = new GomokuEngine(boardSize, lookAhead);
+        this.engine = new GomokuEngineLv2(boardSize, lookAhead);
     }
 
     public toIndex(row: number, col: number): number {
-        return row * this.boardSize + col;
-    }
-
-    public isValidIndex(index: number): boolean {
-        return index >= 0 && index < this.boardLength;
+        return this.engine.toIndex(row, col);
     }
 
     public getValueAt(index: number): number {
@@ -44,7 +41,7 @@ export class Gomoku implements GomokuState{
     }
 
     public printBoard() {
-        console.log("#####################################################");
+        // console.log("#####################################################");
         let board = '';
         for (let i = 0; i < this.boardSize; i++) {
             board += '#';
@@ -62,9 +59,9 @@ export class Gomoku implements GomokuState{
             }
             board += "#\n";
         }
-        console.log(board);
-        console.log("Current Player: " + (this.currentPlayer === 1 ? 'X' : 'O'));
-        console.log("#####################################################");
+        // console.log(board);
+        // console.log("Current Player: " + (this.currentPlayer === 1 ? 'X' : 'O'));
+        // console.log("#####################################################");
     }
 
     // ==============================================================================================
@@ -81,6 +78,7 @@ export class Gomoku implements GomokuState{
         this.bitboardMax = 0n;
         this.bitboardMin = 0n;
         this.currentPlayer = 1;
+        this.engine.clearCache();
     }
 
     public getCurrentPlayer(): number {

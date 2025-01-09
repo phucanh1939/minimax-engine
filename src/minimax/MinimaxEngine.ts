@@ -23,6 +23,14 @@ export abstract class MinimaxEngine<TGameState, TGameMove, TStateHash> {
     public abstract makeMove(state: TGameState, move: TGameMove): boolean;
     public abstract undoMove(state: TGameState, move: TGameMove): boolean;
 
+    public setLookAhead(lookAhead: number) {
+        this.lookAhead = lookAhead;
+    }
+
+    public clearCache() {
+        this.transTable.clear();
+    }
+
     public negamax(state: TGameState, depth: number, alpha: number, beta: number, color: number): number {
         // Save alpha
         const alphaOrigin = alpha;
@@ -68,16 +76,20 @@ export abstract class MinimaxEngine<TGameState, TGameMove, TStateHash> {
         var moves = this.getPossibleMoves(state);
         for (const move of moves) {
             this.makeMove(state, move);
+            if (this.isTerminal(state)) {
+                this.undoMove(state, move);
+                return move;
+            }
             const value = -this.negamax(state, this.lookAhead - 1, -Infinity, Infinity, -player);
             this.undoMove(state, move);
-            if (value > bestValue) {
+            if (value >= bestValue) {
                 bestMove = move;
                 bestValue = value;
             }
-            console.log(`|   move ${move}'s value = ` + value);
+            // console.log(`|   move ${move}'s value = ` + value);
         }
-        var value = this.negamax(state, this.lookAhead, -Infinity, Infinity, player);
-        console.log(`|   root value = ` + value);
+        // console.log(`|   bestMove: ` + bestMove);
+
         return bestMove;
     }
 }

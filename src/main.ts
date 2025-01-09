@@ -1,18 +1,34 @@
 import { Gomoku } from "./gomoku/Gomoku";
+import { GomokuConstant } from "./gomoku/GomokuConstant";
 // import { GomokuEngine } from "./gomoku/GomokuEngine";
 // import { GomokuEngine } from "./engine";
 
-const boardSize = 10;
-const lookAhead = 3;
-const gomoku = new Gomoku(boardSize, lookAhead);
+let boardSize = 15;
+let lookAhead = 3;
+let gomoku = new Gomoku(boardSize, lookAhead);
+let botPlayer = -1;
 
 // UI
 const boardElement = document.getElementById("board")!;
 const gameStatusElement = document.getElementById("game-status")!;
 const botStatusElement = document.getElementById("bot-status")!;
 const resetButton = document.getElementById("reset-button")!;
+const valueSelectElement = document.getElementById("value-select") as HTMLSelectElement; // Dropdown element
 
-// let engine = new GomokuEngine(boardSize, 4);
+valueSelectElement.addEventListener("change", () => {
+    lookAhead = parseInt(valueSelectElement.value); // Update lookAhead when dropdown value changes
+    if (!lookAhead || lookAhead <= 0) lookAhead = 1;
+    console.log(`LookAhead updated to: ${lookAhead}`);
+    gomoku.engine.setLookAhead(lookAhead);
+});
+
+function printAs2DArray(arr: any[], n: number) {
+    var row = 0;
+    for (let i = 0; i < arr.length; i += n) {
+        // // console.log(arr.slice(i, i + n).join(' ') + (' '.repeat(10) + row));  // Join elements to print them in one line
+        row++;
+    }
+}
 
 // Initialize the board UI
 function createBoardUI() {
@@ -59,50 +75,70 @@ function updateBoardUI() {
 function handleCellClick(row: number, col: number) {
     // Check some condition
     if (gomoku.getValueAtRowCol(row, col) !== 0 || gomoku.isWinningBoard()) return;
-    // if (gomoku.getCurrentPlayer() <= 0) return; // not player turn to move
+    if (gomoku.getCurrentPlayer() === botPlayer) return; // not player turn to move
 
     // Player make his move
     makeMove(gomoku.toIndex(row, col));
 
-    // Update turn text
-    var currentPlayer = gomoku.getCurrentPlayer();
-    gameStatusElement.textContent = currentPlayer === 1 ? "Player Turn" : "Bot Turn";
-
     // Check for game over
-    if (gomoku.isBoardFull()) {
-        gameStatusElement.textContent = "It's a draw!";
-        return;
-    }
-    if (gomoku.isWinningBoard()) {
-        gameStatusElement.textContent = currentPlayer === -1 ? `Player wins!` : "Bot win";
-        return;
-    }
+    if (checkEndGame()) return;
+
+    // Debug
+    printPatternInfo();
 
     // Bot move
-    // if (currentPlayer === -1) {
-    //     botStatusElement.textContent = "Thinking...";
-    //     setTimeout(() => botMove(), 1);
-    // }
+    if (gomoku.currentPlayer === botPlayer) {
+        botStatusElement.textContent = "Thinking...";
+        setTimeout(() => botMove(), 100);
+    }
 
     // Test possible move
     // var moves = gomoku.getAvailableMoves();
     // for (const move of moves) {
     //     makeMove(move);
     // }
-
-    var patterns_max = gomoku.engine.countPatterns(gomoku.bitboardMax);
-    var patterns_min = gomoku.engine.countPatterns(gomoku.bitboardMin);
-    console.log(`Patterns for Player Max (bitboardMax) ${gomoku.bitboardMax.toString(2)}:`);
-    console.log(patterns_max);
-    
-    console.log(`Patterns for Player Min (bitboardMin) ${gomoku.bitboardMin}:`);
-    console.log(patterns_min);
-
 }
 
 function makeMove(index: number) {
+    // console.log("PLAYER MOVE: " + gomoku.currentPlayer);
     gomoku.makeMove(index);
+    // console.log("PLAYER NEXT: " + gomoku.currentPlayer);
     updateBoardUI();
+    gameStatusElement.textContent = gomoku.currentPlayer !== botPlayer ? "Player Turn" : "Bot Turn";
+}
+
+function printPatternInfo() {
+    var patternResult = gomoku.engine.countPattern(gomoku);
+    // console.log (`- Patterns for MAX player (1): `)
+    for (const [key, value] of patternResult.patternCountsForMax) {
+        var parttern = GomokuConstant.getPatternByMask(key);
+        if (!parttern) continue;
+        // console.log(`   + ${parttern.name}: ${value}`);
+    }
+    // console.log (`- Patterns for MIN player (-1): `)
+    for (const [key, value] of patternResult.patternCountsForMin) {
+        var parttern = GomokuConstant.getPatternByMask(key);
+        if (!parttern) continue;
+        // console.log(`   + ${parttern.name}: ${value}`);
+    }
+    // // console.log (`- Masks): `)
+    // printAs2DArray(patternResult.masks, boardSize);
+    // console.log(`- Total value: ${patternResult.totalValue} `);
+    // console.log(`- Next player: ${gomoku.currentPlayer}`);
+    // console.log(`- WHO IS SURE WIN: ${gomoku.engine.whoIsSureWin(patternResult.patternCountsForMax, patternResult.patternCountsForMin, gomoku.currentPlayer)}`);
+    // console.log("================================================");
+}
+
+function checkEndGame() {
+    if (gomoku.isBoardFull()) {
+        gameStatusElement.textContent = "It's a draw!";
+        return true;
+    }
+    if (gomoku.isWinningBoard()) {
+        gameStatusElement.textContent = gomoku.currentPlayer === botPlayer ? `Player wins!` : "Bot win";
+        return true;
+    }
+    return false;
 }
 
 // Bot makes a random move
@@ -112,6 +148,8 @@ function botMove() {
     var dt = Date.now() - start;
     botStatusElement.textContent = "Time: " + dt;
     if (move) makeMove(move);
+    printPatternInfo();
+    checkEndGame();
 }
 
 function getCellUI(move: number):  HTMLElement | null {
@@ -129,9 +167,14 @@ function getCellUI(move: number):  HTMLElement | null {
 
 // Reset the game
 resetButton.addEventListener("click", () => {
+    botPlayer = -botPlayer;
     gomoku.reset();
+    gomoku.engine.setLookAhead(lookAhead);
     gameStatusElement.textContent = "Player 1's Turn";
     updateBoardUI();
+    if (gomoku.currentPlayer === botPlayer) {
+        makeMove(Math.floor(boardSize * boardSize / 2))
+    }
 });
 
 // Initialize everything

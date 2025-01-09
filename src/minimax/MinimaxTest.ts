@@ -88,11 +88,11 @@ var engine = new TestEngine(lookAhead);
 
 // Find best move for player 1
 var moveCount = 1;
-console.log(`*--------------------------------------*`);
+// console.log(`*--------------------------------------*`);
 var bestMove = engine.findBestMove(game, game.player);
-console.log(`|   bestMove ${moveCount} for player ${game.player} = ${bestMove}`);
-console.log(`|   evaluateValues: ${JSON.stringify(engine.evaluateValues)}`);
-console.log(`*--------------------------------------*`);
+// console.log(`|   bestMove ${moveCount} for player ${game.player} = ${bestMove}`);
+// console.log(`|   evaluateValues: ${JSON.stringify(engine.evaluateValues)}`);
+// console.log(`*--------------------------------------*`);
 
 // player 1 make move
 if (bestMove !== null) engine.makeMove(game, bestMove);
@@ -102,18 +102,18 @@ engine.makeMove(game, 0);
 // Find best for for player 1
 moveCount++;
 engine.evaluateValues = [];
-console.log(`*--------------------------------------*`);
+// console.log(`*--------------------------------------*`);
 var bestMove = engine.findBestMove(game, game.player);
-console.log(`|   bestMove ${moveCount} for player ${game.player} = ${bestMove}`);
-console.log(`|   evaluateValues: ${JSON.stringify(engine.evaluateValues)}`);
-console.log(`*--------------------------------------*`);
+// console.log(`|   bestMove ${moveCount} for player ${game.player} = ${bestMove}`);
+// console.log(`|   evaluateValues: ${JSON.stringify(engine.evaluateValues)}`);
+// console.log(`*--------------------------------------*`);
 
 
 // Find best move for player 2
 // engine.evaluateValues = [];
-// console.log(`*--------------------------------------*`);
+// // console.log(`*--------------------------------------*`);
 // game.player = -1;
 // var bestMove = engine.findBestMove(game, game.player);
-// console.log(`|   bestMove for player ${game.player} = ${bestMove}`);
-// console.log(`|   evaluateValues: ${JSON.stringify(engine.evaluateValues)}`);
-// console.log(`*--------------------------------------*`);
+// // console.log(`|   bestMove for player ${game.player} = ${bestMove}`);
+// // console.log(`|   evaluateValues: ${JSON.stringify(engine.evaluateValues)}`);
+// // console.log(`*--------------------------------------*`);

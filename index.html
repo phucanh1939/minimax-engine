@@ -10,9 +10,19 @@
   <div id="app">
     <h1>Gomoku</h1>
     <div id="board"></div>
-    <p id="game-status">Player 1's Turn</p>
-    <p id="bot-status">Bot status</p>
+    <p id="game-status">Player 1's Turn</p>    
     <button id="reset-button">Reset Game</button>
+    <p id="bot-status">Bot status</p>
+    <!-- New Dropdown for selecting values 1 to 5 with default value 3 -->
+    <label for="value-select">Look ahead:</label>
+    <select id="value-select">
+      <option value="1">1</option>
+      <option value="2">2</option>
+      <option value="3" selected>3</option>
+      <option value="4">4</option>
+      <option value="5">5</option>
+    </select>
+
   </div>
   <script src="dist/bundle.js"></script>
 </body>
