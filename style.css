@@ -4,31 +4,40 @@ body {
     background-color: #f9f9f9;
     margin: 0;
     padding: 0;
+    height: 100vh; /* Ensure full viewport height */
+    display: flex;
+    justify-content: center;
+    align-items: center;
 }
 
 #app {
-    margin: 20px auto;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    margin: 0; /* Remove existing margin to avoid conflicts */
     width: 320px;
 }
 
 #board {
     display: grid;
-    grid-template-columns: repeat(15, 20px);
+    grid-template-columns: repeat(15, 30px);
     grid-gap: 1px;
     background-color: #333;
-    margin: 10px auto;
-    border: 1px solid #fff; /* Add a border to the board container */
+    border: 1px solid #fff;
+    width: calc(15 * 30px + 14 * 1px);
+    height: calc(15 * 30px + 14 * 1px);
+    box-sizing: border-box;
+    margin-bottom: 20px; /* Add spacing below the board */
 }
 
 .cell {
-    width: 20px;
-    height: 20px;
+    width: 30px;
+    height: 30px;
     background-color: #fff;
     display: flex;
     align-items: center;
     justify-content: center;
     cursor: pointer;
-    /* border: 1px solid #ccc; Add borders to make them square */
 }
 
 .cell.player1 {
@@ -55,4 +64,15 @@ button {
 
 button:hover {
     background-color: #0056b3;
+}
+
+#bot-status {
+    margin-top: 10px;
+    font-size: 1em;
+}
+
+select {
+    padding: 5px;
+    font-size: 1em;
+    margin-left: 5px;
 }

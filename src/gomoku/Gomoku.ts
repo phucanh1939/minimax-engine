@@ -1,34 +1,30 @@
-import { GomokuEngine, GomokuState } from "./GomokuEngine";
-import { GomokuEngineLv2 } from "./GomokuEngineLv2";
+import { FourDirections, WinningCount } from "./defines/GomokoConstant";
+import { GomokoPieceType } from "./defines/GomokuPieceType";
+import { GomokuState } from "./defines/GomokuState";
+import { GomokuEngine } from "./engine/GomokuEngine";
+import { GomokuEngineLv2 } from "./engine/GomokuEngineLv2";
 
-export class Gomoku implements GomokuState{
-    private boardSize: number = 10;
-    private boardLength: number = 100;
+export class Gomoku {
+    private boardSize: number;
+    public board: number[];
     public currentPlayer: number = 1;
-    public bitboardMax: bigint = 0n;
-    public bitboardMin: bigint = 0n;
-    public engine: GomokuEngine;
+    private lastMove: number = -1;
 
-    constructor(boardSize: number, lookAhead: number) {
+    constructor(boardSize: number, lookahead: number) {
         this.boardSize = boardSize;
-        this.boardLength = boardSize * boardSize;
-        this.engine = new GomokuEngineLv2(boardSize, lookAhead);
+        this.board = Array(this.boardSize * this.boardSize).fill(0);
     }
 
     public toIndex(row: number, col: number): number {
-        return this.engine.toIndex(row, col);
+        return row * this.boardSize + col;
     }
 
     public getValueAt(index: number): number {
-        if ((this.bitboardMax & (1n << BigInt(index))) !== 0n)
-            return 1;
-        if ((this.bitboardMin & (1n << BigInt(index))) !== 0n)
-            return -1;
-        return 0;
+        return this.board[index];
     }
 
     private setValueAt(index: number, value: number) {
-        this.engine.setValueAt(this, index, value);
+        this.board[index] = value;
     }
 
     public isInBounds(row: number, col: number): boolean {
@@ -40,45 +36,12 @@ export class Gomoku implements GomokuState{
         return this.getValueAt(this.toIndex(row, col));
     }
 
-    public printBoard() {
-        // console.log("#####################################################");
-        let board = '';
-        for (let i = 0; i < this.boardSize; i++) {
-            board += '#';
-            for (let j = 0; j < this.boardSize; j++) {
-                const index = i * this.boardSize + j;
-                const isMaxSet = (this.bitboardMax & (1n << BigInt(index))) !== 0n;
-                const isMinSet = (this.bitboardMin & (1n << BigInt(index))) !== 0n;
-                if (isMaxSet) {
-                    board += 'X ';
-                } else if (isMinSet) {
-                    board += 'O ';
-                } else {
-                    board += '. ';
-                }
-            }
-            board += "#\n";
-        }
-        // console.log(board);
-        // console.log("Current Player: " + (this.currentPlayer === 1 ? 'X' : 'O'));
-        // console.log("#####################################################");
-    }
-
     // ==============================================================================================
 
-    public loadGame(board: number[], boardSize: number, player: number) {
-        this.boardSize = boardSize;
-        this.currentPlayer = player;
-        for (var i = 0; i < board.length; i++) {
-            this.setValueAt(i, board[i]);
-        }
-    }
-
     public reset(): void {
-        this.bitboardMax = 0n;
-        this.bitboardMin = 0n;
+        this.board = Array(this.boardSize * this.boardSize).fill(0);
         this.currentPlayer = 1;
-        this.engine.clearCache();
+        this.lastMove = -1;
     }
 
     public getCurrentPlayer(): number {
@@ -86,20 +49,64 @@ export class Gomoku implements GomokuState{
     }
 
     public makeMove(index: number): boolean {
-        return this.engine.makeMove(this, index);
+        if (index < 0 || index >= this.board.length) return false;
+        if (this.board[index] !== 0) return false;
+        this.board[index] = this.currentPlayer;
+        this.currentPlayer *= -1;
+        this.lastMove = index;
+        return true;
+    }
+
+    public isOutOfBounds(row: number, col: number): boolean {
+        return row < 0 || row >= this.boardSize || col < 0 || col >= this.boardSize;
+    }
+
+    protected countPiece(piece: number, fromRow: number, fromCol: number, dx: number, dy: number) {
+        let step = 1;
+        let count = 0;
+        while (true) {
+            const currRow = fromRow + step * dy;
+            const currCol = fromCol + step * dx;
+            if (this.isOutOfBounds(currRow, currCol)) break;
+            const currIndex = currRow * this.boardSize + currCol;
+            if (this.board[currIndex] !== piece) break;
+            count++;
+            step++;
+        }
+        return count;
+    }
+
+    protected hasWinningLine(index: number): boolean {
+        if (index < 0 || index >= this.board.length) return false;
+        var piece = this.board[index];
+        if (piece === GomokoPieceType.EMPTY) return false;
+        if (piece === GomokoPieceType.BLOCKER) return false;
+        const row = Math.floor(index / this.boardSize);
+        const col = index % this.boardSize;
+        for (const direction of FourDirections) {
+            var count = 1;
+            count += this.countPiece(piece, row, col, direction.x, direction.y);
+            if (count >= WinningCount) return true;
+            count += this.countPiece(piece, row, col, -direction.x, -direction.y);
+            if (count >= WinningCount) return true;
+        }
+        return false;
     }
 
     public isWinningBoard(): boolean {
-        return this.engine.isWinningBoard(this);
+        return this.hasWinningLine(this.lastMove);
     }
 
     public isBoardFull(): boolean {
-        const allOccupied = this.bitboardMax | this.bitboardMin;
-        const fullBoard = (1n << BigInt(this.boardLength)) - 1n;
-        return allOccupied === fullBoard;
+        return this.board.every(cell => cell !== 0);
     }
 
-    public getPossibleMoves(): number[] {
-        return this.engine.getPossibleMoves(this);
+    public toState(): GomokuState {
+        return {
+            board: this.board,
+            boardSize: this.boardSize,
+            currentPlayer: this.currentPlayer,
+            lastMove: this.lastMove
+        }
     }
 }

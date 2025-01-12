@@ -1,61 +1,69 @@
-interface TranspositionEntry {
+export interface StateCacheEntry {
     depth: number,
     value: number,
     flag: number,
 }
 
-const FLAG_EXACT =  0;
-const FLAG_LOWER = -1;
-const FLAG_UPPER =  1;
+export enum StateCacheFlag {
+    Exact =  0,
+    Lower = -1,
+    Upper =  1,
+}
+
 
 /**
  * Used to find best move from a game state
  * Valid game: 2 players, zero-sum, perfect information
  */
 export abstract class MinimaxEngine<TGameState, TGameMove, TStateHash> {
-    protected lookAhead = 1;
-    protected transTable: Map<TStateHash, TranspositionEntry> = new Map();
+    protected lookahead = 1;
+    protected treeCache: Map<TStateHash, StateCacheEntry> = new Map();
 
-    public abstract evaluate(state: TGameState): number;
-    public abstract getStateHash(state: TGameState): TStateHash;
-    public abstract isTerminal(state: TGameState): boolean;
-    public abstract getPossibleMoves(state: TGameState): TGameMove[];
-    public abstract makeMove(state: TGameState, move: TGameMove): boolean;
-    public abstract undoMove(state: TGameState, move: TGameMove): boolean;
+    public abstract loadState(state: TGameState): void;
+    public abstract clearState(): void;
+    public abstract evaluate(hash: TStateHash): number;
+    public abstract evaluateTerminal(hash: TStateHash): number;
+    public abstract getStateHash(): TStateHash;
+    public abstract isTerminal(): boolean;
+    public abstract getNextMovesWithCutoff(): TGameMove[];
+    public abstract getNextMoves(): TGameMove[];
+    public abstract makeMove(move: TGameMove): boolean;
+    public abstract undoMove(move: TGameMove): boolean;
+    public abstract getCurrentPlayer(): number;
 
-    public setLookAhead(lookAhead: number) {
-        this.lookAhead = lookAhead;
+    public setLookAhead(lookahead: number) {
+        this.lookahead = lookahead;
     }
 
-    public clearCache() {
-        this.transTable.clear();
+    public resetGame() {
+        this.treeCache.clear();
     }
 
-    public negamax(state: TGameState, depth: number, alpha: number, beta: number, color: number): number {
+    protected negamax(depth: number, alpha: number, beta: number, color: number): number {
         // Save alpha
         const alphaOrigin = alpha;
 
         // Check cache
-        var hash = this.getStateHash(state);
-        var entry = this.transTable.get(hash);
+        var hash = this.getStateHash();
+        var entry = this.treeCache.get(hash);
         if (entry && entry.depth >= depth) {
-            if (entry.flag == FLAG_EXACT) return entry.value;
-            else if (entry.flag == FLAG_LOWER && entry.value > alpha) alpha = entry.value;
-            else if (entry.flag == FLAG_UPPER && entry.value < beta) beta = entry.value
+            if (entry.flag == StateCacheFlag.Exact) return entry.value;
+            else if (entry.flag == StateCacheFlag.Lower && entry.value > alpha) alpha = entry.value;
+            else if (entry.flag == StateCacheFlag.Upper && entry.value < beta) beta = entry.value
             if (alpha >= beta) return entry.value;
         }
 
         // Check for leaf
-        if (depth == 0 || this.isTerminal(state))
-            return color * this.evaluate(state);
+        if (depth == 0) return color * this.evaluate(hash);
+        if (this.isTerminal()) return color * this.evaluateTerminal(hash);
 
         // Calculate for child nodes
-        const moves = this.getPossibleMoves(state);
+        const moves = this.getNextMoves();
         var maxValue = -Infinity;
         for (const move of moves) {
-            this.makeMove(state, move);
-            const value = -this.negamax(state, depth - 1, -beta, -alpha, -color);
-            this.undoMove(state, move);
+            this.makeMove(move);
+            const value = -this.negamax(depth - 1, -beta, -alpha, -color);
+            this.undoMove(move);
             if (value > maxValue) {
                 maxValue = value;
                 if (maxValue > alpha) alpha = maxValue;
@@ -64,32 +72,38 @@ export abstract class MinimaxEngine<TGameState, TGameMove, TStateHash> {
         }
 
         // Update trans table
-        const flag = maxValue <= alphaOrigin ? FLAG_UPPER : maxValue >= beta ? FLAG_LOWER : FLAG_EXACT;
-        // const flag = maxValue <= alpha ? FLAG_UPPER : maxValue >= beta ? FLAG_LOWER : FLAG_EXACT;
-        this.transTable.set(hash, {value: maxValue, depth: depth, flag: flag});
+        const flag = maxValue <= alphaOrigin ? StateCacheFlag.Upper : maxValue >= beta ? StateCacheFlag.Lower : StateCacheFlag.Exact;
+        // const flag = maxValue <= alpha ? TransTableFlag.Upper : maxValue >= beta ? TransTableFlag.Lower : TransTableFlag.Exact;
+        this.treeCache.set(hash, {value: maxValue, depth: depth, flag: flag});
         return maxValue;
     }
 
-    public findBestMove(state: TGameState, player: number): TGameMove | null {
-        var bestMove = null;
-        var bestValue = -Infinity;
-        var moves = this.getPossibleMoves(state);
+    public findBestMove(state: TGameState): TGameMove | null {
+        let bestMove = null;
+        let bestValue = -Infinity;
+        this.loadState(state);
+        const moves = this.getNextMovesWithCutoff();
+        console.log("================> nextMoves" + JSON.stringify(moves));
+        if (moves.length === 1) return moves[0];
+        const player = this.getCurrentPlayer();
+        // return moves[0];
         for (const move of moves) {
-            this.makeMove(state, move);
-            if (this.isTerminal(state)) {
-                this.undoMove(state, move);
-                return move;
+            this.makeMove(move);
+            if (this.isTerminal()) {
+                this.undoMove(move);
+                bestMove = move;
+                break;
             }
-            const value = -this.negamax(state, this.lookAhead - 1, -Infinity, Infinity, -player);
-            this.undoMove(state, move);
-            if (value >= bestValue) {
+            const value = -this.negamax(this.lookahead - 1, -Infinity, Infinity, -player);
+            this.undoMove(move);
+            if (value > bestValue) {
                 bestMove = move;
                 bestValue = value;
             }
-            // console.log(`|   move ${move}'s value = ` + value);
+            // console.log(`---- Move ${move}: ${value}`);
         }
-        // console.log(`|   bestMove: ` + bestMove);
-
+        console.log(`---- BestMove ${bestMove}: bestValue`);
+        this.clearState();
         return bestMove;
     }
 }
