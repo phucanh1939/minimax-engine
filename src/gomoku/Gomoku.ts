@@ -1,8 +1,6 @@
 import { FourDirections, WinningCount } from "./defines/GomokoConstant";
 import { GomokoPieceType } from "./defines/GomokuPieceType";
 import { GomokuState } from "./defines/GomokuState";
-import { GomokuEngine } from "./engine/GomokuEngine";
-import { GomokuEngineLv2 } from "./engine/GomokuEngineLv2";
 
 export class Gomoku {
     private boardSize: number;
@@ -10,9 +8,21 @@ export class Gomoku {
     public currentPlayer: number = 1;
     private lastMove: number = -1;
 
-    constructor(boardSize: number, lookahead: number) {
+    constructor(boardSize: number) {
         this.boardSize = boardSize;
         this.board = Array(this.boardSize * this.boardSize).fill(0);
+        
+        // fill center with a blocker
+        this.blockCenter();
+    }
+
+    private blockCenter() {
+        this.board[this.center()] = GomokoPieceType.BLOCKER;
+    }
+
+    public center(): number {
+        var center = Math.floor(this.boardSize / 2);
+        return center * this.boardSize + center;
     }
 
     public toIndex(row: number, col: number): number {
@@ -42,6 +52,7 @@ export class Gomoku {
         this.board = Array(this.boardSize * this.boardSize).fill(0);
         this.currentPlayer = 1;
         this.lastMove = -1;
+        this.blockCenter();
     }
 
     public getCurrentPlayer(): number {
@@ -50,7 +61,7 @@ export class Gomoku {
 
     public makeMove(index: number): boolean {
         if (index < 0 || index >= this.board.length) return false;
-        if (this.board[index] !== 0) return false;
+        if (this.board[index] !== GomokoPieceType.EMPTY) return false;
         this.board[index] = this.currentPlayer;
         this.currentPlayer *= -1;
         this.lastMove = index;

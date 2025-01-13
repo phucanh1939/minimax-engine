@@ -1,6 +1,6 @@
 export enum GomokoPieceType {
-    EMPTY = 0,
-    MIN = -1,
-    MAX = 1,
-    BLOCKER = 3
+    EMPTY = 0,      // Empty cell
+    MIN = -1,       // Second player
+    MAX = 1,        // First player
+    BLOCKER = 3     // Block cell (skill objects, init blocker, etc.) --> Cell that player can not place anything
 }

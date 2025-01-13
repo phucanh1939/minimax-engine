@@ -83,7 +83,7 @@ export abstract class MinimaxEngine<TGameState, TGameMove, TStateHash> {
         let bestValue = -Infinity;
         this.loadState(state);
         const moves = this.getNextMovesWithCutoff();
-        console.log("================> nextMoves" + JSON.stringify(moves));
+        // console.log("================> nextMoves" + JSON.stringify(moves));
         if (moves.length === 1) return moves[0];
         const player = this.getCurrentPlayer();
         // return moves[0];

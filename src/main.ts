@@ -1,5 +1,6 @@
 import { Gomoku } from "./gomoku/Gomoku";
-import { GomokuEngineLv2 } from "./gomoku/engine/GomokuEngineLv2";
+import { GomokoPieceType } from "./gomoku/defines/GomokuPieceType";
+import { GomokuEngine2 } from "./gomoku/engine/GomokuEngine2";
 // import { GomokuEngine } from "./gomoku/GomokuEngine";
 // import { GomokuEngine } from "./engine";
 
@@ -7,8 +8,8 @@ let boardSize = 15;
 let lookahead = 3;
 let botPlayer = -1;
 let isPlayerWithBot = true;
-let gomoku = new Gomoku(boardSize, lookahead);
-let engine = new GomokuEngineLv2(lookahead);
+let gomoku = new Gomoku(boardSize);
+let engine = new GomokuEngine2(lookahead);
 
 // UI
 const boardElement = document.getElementById("board")!;
@@ -60,12 +61,14 @@ function updateBoardUI() {
 
         htmlCell.textContent = ""; // Clear the cell before updating
 
-        if (value === 1) {
+        if (value === GomokoPieceType.MAX) {
             htmlCell.textContent = "X"; // Player 1 (human) uses "X"
             htmlCell.classList.add("player1");
-        } else if (value === -1) {
+        } else if (value === GomokoPieceType.MIN) {
             htmlCell.textContent = "O"; // Player 2 (bot) uses "O"
             htmlCell.classList.add("player2");
+        } else if (value === GomokoPieceType.BLOCKER) {
+            htmlCell.textContent = "#";
         }
 
         htmlCell.classList.remove("player1", "player2");
@@ -176,8 +179,8 @@ resetButton.addEventListener("click", () => {
     gameStatusElement.textContent = "Player 1's Turn";
     updateBoardUI();
     if (isPlayerWithBot && gomoku.currentPlayer === botPlayer) {
-        var center = Math.floor(boardSize / 2);
-        makeMove(center * boardSize + center)
+        var center = gomoku.center();
+        makeMove(center - 1);
     }
 });
 

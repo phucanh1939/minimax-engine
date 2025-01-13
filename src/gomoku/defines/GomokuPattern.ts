@@ -115,11 +115,3 @@ export const PatternValueMap = new Map<PatternType, number>([
     [PatternType.CLOSED_3,                     0],
     [PatternType.CLOSED_2,                     0],
 ]);
-
-export function getPatternType(pattern: number): PatternType {
-    return PatternMap.get(pattern) || PatternType.NONE;
-}
-
-export function getPatternValue(pattern: PatternType): number {
-    return PatternValueMap.get(pattern) || 0;
-}

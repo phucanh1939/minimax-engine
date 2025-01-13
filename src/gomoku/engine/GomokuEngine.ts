@@ -1,7 +1,7 @@
-import { MinimaxEngine, StateCacheFlag } from "../../minimax/MinimaxEngine";
+import { MinimaxEngine } from "../../minimax/MinimaxEngine";
 import { GomokuHash, GomokuMove, GomokuState, Vec2 } from "../defines/GomokuState";
 import { EightDirections, FourDirections, WinningCount } from "../defines/GomokoConstant";
-import { getPatternType, getPatternValue, PatternType, PatternValue, WinValue } from "../defines/GomokuPattern";
+import { PatternMap, PatternType, PatternValue, PatternValueMap, WinValue } from "../defines/GomokuPattern";
 import { GomokoPieceType } from "../defines/GomokuPieceType";
 
 const MovesCutOff = 8;
@@ -133,7 +133,7 @@ export class GomokuEngine extends MinimaxEngine<GomokuState, GomokuMove, GomokuH
             }
         }
         if (moves.length === 0) {
-            console.log("===========> LOSE ANY WAY!!!! " + lastValidIndex);
+            console.log("===========> LOSE ANY WAY!!!! ");
             return [lastValidIndex];
         }
         const cutoffMoves = moves
@@ -145,6 +145,7 @@ export class GomokuEngine extends MinimaxEngine<GomokuState, GomokuMove, GomokuH
 
     public makeMove(move: GomokuMove): boolean {
         if (move < 0 || move >= this.board.length) return false;
+        if (this.board[move] !== GomokoPieceType.EMPTY) return false;
         this.board[move] = this.currentPlayer;
         this.currentPlayer = -this.currentPlayer;
         this.moves.push(move);
@@ -259,7 +260,7 @@ export class GomokuEngine extends MinimaxEngine<GomokuState, GomokuMove, GomokuH
 
         return {
             indeces: indeces,
-            pattern: getPatternType(pattern)
+            pattern: this.getPatternType(pattern)
         }
     }
 
@@ -274,7 +275,7 @@ export class GomokuEngine extends MinimaxEngine<GomokuState, GomokuMove, GomokuH
             for (let col = 0; col < this.boardSize; col++) {
                 const index = row * this.boardSize + col;
                 const piece = this.board[index];
-                if (piece === GomokoPieceType.EMPTY || piece === GomokoPieceType.BLOCKER) continue; // TODO skip empty cell & BLOCKER
+                if (piece !== GomokoPieceType.MAX && piece !== GomokoPieceType.MIN) continue; // TODO skip empty cell & BLOCKER
                 const isMaxPlayer = piece === GomokoPieceType.MAX;
                 const patterns = isMaxPlayer ? maxPatterns : minPatterns;
                 const sign = isMaxPlayer ? 1 : -1;
@@ -292,7 +293,7 @@ export class GomokuEngine extends MinimaxEngine<GomokuState, GomokuMove, GomokuH
                     // count the pattern
                     const count = (patterns.get(pattern) || 0) + 1;
                     patterns.set(directionPattern.pattern, count);
-                    const patternValue = getPatternValue(directionPattern.pattern);
+                    const patternValue = this.getPatternValue(directionPattern.pattern);
                     if (patternValue >= WinValue) return {value: WinValue * sign, maxPatterns: maxPatterns, minPatterns: minPatterns};
                     // console.log(`PLAYER ${piece}: ${PatternType[directionPattern.pattern]} at ${index} in direction ${direction.x} ${direction.y}`);
                     // update the value
@@ -360,11 +361,11 @@ export class GomokuEngine extends MinimaxEngine<GomokuState, GomokuMove, GomokuH
         return 0;
     }
 
-    protected getMoveImpactValue(row: number, col: number) {
-        // value before move
-
-        // value after move
-
-        // impact = (value_after - value_before) * sign
+    protected getPatternType(pattern: number): PatternType {
+        return PatternMap.get(pattern) || PatternType.NONE;
+    }
+    
+    protected getPatternValue(pattern: PatternType): number {
+        return PatternValueMap.get(pattern) || 0;
     }
 }
