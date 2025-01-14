@@ -34,6 +34,14 @@ export class GomokuEngine extends MinimaxEngine<GomokuState, GomokuMove, GomokuH
         return this.currentPlayer === GomokoPieceType.MAX ? 1 : -1;
     }
 
+    public getCurrentPlayer(): number {
+        return this.currentPlayer;
+    }
+
+    public getOpponent(): number {
+        return -this.currentPlayer;
+    }
+
     public evaluate(hash: GomokuHash): number {
         const cacheValue = this.stateCache.get(hash);
         if (cacheValue !== null && cacheValue !== undefined) {
@@ -102,16 +110,16 @@ export class GomokuEngine extends MinimaxEngine<GomokuState, GomokuMove, GomokuH
         return this.hasWinningLine(this.getLastMove());
     }
 
-    public getCurrentPlayer(): number {
-        return this.currentPlayer;
+    public getNextMoves(): GomokuMove[] {
+        return this.getMovesInRange(1);
     }
 
-    public getNextMoves(): GomokuMove[] {
+    public getMovesInRange(range: number): number[] {
         let moves: number[] = [];
         for (let row = 0; row < this.boardSize; row++) {
             for (let col = 0; col < this.boardSize; col++) {
                 const index = row * this.boardSize + col;
-                if (this.board[index] === 0 && this.hasNeighbor(row, col)) {
+                if (this.board[index] === 0 && this.hasNeighbor(row, col, range)) {
                     moves.push(index);
                 }
             }
@@ -126,7 +134,7 @@ export class GomokuEngine extends MinimaxEngine<GomokuState, GomokuMove, GomokuH
         for (let row = 0; row < this.boardSize; row++) {
             for (let col = 0; col < this.boardSize; col++) {
                 const index = row * this.boardSize + col;
-                if (this.board[index] === 0 && this.hasNeighbor(row, col)) {
+                if (this.board[index] === 0 && this.hasNeighbor(row, col, 1)) {
                     lastValidIndex = index;
                     this.makeMove(index);
                     if (this.hasWinningLine(index)) {
@@ -214,7 +222,7 @@ export class GomokuEngine extends MinimaxEngine<GomokuState, GomokuMove, GomokuH
         return false;
     }
 
-    public hasNeighbor(row: number, col: number, range: number = 1): boolean {
+    public hasNeighbor(row: number, col: number, range: number): boolean {
         for (const direction of EightDirections) {
             for (let step = 1; step <= range; step++) {
                 const toRow = row + step * direction.y;
@@ -409,5 +417,22 @@ export class GomokuEngine extends MinimaxEngine<GomokuState, GomokuMove, GomokuH
 
     public isCheckSureWin(): boolean {
         return this.checkSureWin;
+    }
+
+    public isWinningMove(move: number): boolean {
+        this.makeMove(move);
+        var result = this.hasWinningLine(move);
+        this.undoMove(move);
+        return result;
+    }
+
+    protected setValueAt(index: number, value: number) {
+        if (index < 0 || index >= this.board.length) return;
+        this.board[index] = value;
+    }
+
+    protected clearValueAt(index: number) {
+        if (index < 0 || index >= this.board.length) return;
+        this.board[0] = 0;
     }
 }
