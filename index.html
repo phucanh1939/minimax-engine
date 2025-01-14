@@ -7,22 +7,77 @@
   <link rel="stylesheet" href="style.css">
 </head>
 <body>
+  <!-- Left Section for 14 Input Boxes -->
+  <div id="number-inputs">
+    <h1>Config</h1>
+
+    <label for="surewincheckbox">Check Sure Win:</label>
+    <input type="checkbox" id="surewincheckbox" name="surewincheckbox">
+
+    <label for="scaler">Current player value scaler:</label>
+    <input type="number" id="scaler" name="scaler">
+
+    <label for="open-5">Open 5:</label>
+    <input type="number" id="open-5" name="open-5">
+    
+    <label for="blocked-5">Blocked 5:</label>
+    <input type="number" id="blocked-5" name="blocked-5">
+    
+    <label for="blocked-broken-5">Blocked Broken 5:</label>
+    <input type="number" id="blocked-broken-5" name="blocked-broken-5">
+    
+    <label for="open-4">Open 4:</label>
+    <input type="number" id="open-4" name="open-4">
+    
+    <label for="open-broken-5">Open Broken 5:</label>
+    <input type="number" id="open-broken-5" name="open-broken-5">
+    
+    <label for="blocked-4">Blocked 4:</label>
+    <input type="number" id="blocked-4" name="blocked-4">
+    
+    <label for="open-broken-4">Open Broken 4:</label>
+    <input type="number" id="open-broken-4" name="open-broken-4">
+    
+    <label for="blocked-broken-4">Blocked Broken 4:</label>
+    <input type="number" id="blocked-broken-4" name="blocked-broken-4">
+    
+    <label for="open-broken-3">Open Broken 3:</label>
+    <input type="number" id="open-broken-3" name="open-broken-3">
+    
+    <label for="open-3">Open 3:</label>
+    <input type="number" id="open-3" name="open-3">
+    
+    <label for="blocked-3">Blocked 3:</label>
+    <input type="number" id="blocked-3" name="blocked-3">
+    
+    <label for="blocked-broken-3">Blocked Broken 3:</label>
+    <input type="number" id="blocked-broken-3" name="blocked-broken-3">
+    
+    <label for="open-2">Open 2:</label>
+    <input type="number" id="open-2" name="open-2">
+    
+    <label for="open-broken-2">Open Broken 2:</label>
+    <input type="number" id="open-broken-2" name="open-broken-2">
+  </div>
+  
+
+  <!-- Main App Section -->
   <div id="app">
     <h1>Gomoku</h1>
     <div id="board"></div>
     <p id="game-status">Player 1's Turn</p>    
     <button id="reset-button">Reset Game</button>
+    <button id="undo-button">Undo move</button>
     <p id="bot-status">Bot status</p>
-    <!-- New Dropdown for selecting values 1 to 5 with default value 3 -->
+    <!-- Dropdown -->
     <label for="value-select">Look ahead:</label>
     <select id="value-select">
       <option value="1">1</option>
       <option value="2">2</option>
       <option value="3" selected>3</option>
-      <option value="4">4</option>
-      <option value="5">5</option>
+      <!-- <option value="4">4</option> -->
+      <!-- <option value="5">5</option> -->
     </select>
-
   </div>
   <script src="dist/bundle.js"></script>
 </body>

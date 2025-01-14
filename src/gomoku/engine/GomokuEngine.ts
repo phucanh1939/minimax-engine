@@ -1,10 +1,15 @@
 import { MinimaxEngine } from "../../minimax/MinimaxEngine";
 import { GomokuHash, GomokuMove, GomokuState, Vec2 } from "../defines/GomokuState";
 import { EightDirections, FourDirections, WinningCount } from "../defines/GomokoConstant";
-import { PatternMap, PatternType, PatternValue, PatternValueMap, WinValue } from "../defines/GomokuPattern";
+import { PatternMap, PatternType, PatternValue, WinValue } from "../defines/GomokuPattern";
 import { GomokoPieceType } from "../defines/GomokuPieceType";
 
-const MovesCutOff = 8;
+export interface GomokuEngineConfig {
+    lookahead: number;
+    patternValues: Map<PatternType, number> | null;
+    currentPlayerValueScaler: number;
+    movesCutoff: number;
+}
 
 export class GomokuEngine extends MinimaxEngine<GomokuState, GomokuMove, GomokuHash> {
     protected board: number[] = [];
@@ -12,10 +17,17 @@ export class GomokuEngine extends MinimaxEngine<GomokuState, GomokuMove, GomokuH
     protected currentPlayer: number = 0;
     protected moves: GomokuMove[] = [];
     protected stateCache: Map<number, number> = new Map();
+    protected patternValues: Map<PatternType, number> | null;
+    protected currentPlayerValueScaler: number;
+    protected movesCutoff: number;
+    protected checkSureWin: boolean = true;
 
-    constructor(lookahead: number) {
+    constructor(config: GomokuEngineConfig) {
         super();
-        this.lookahead = lookahead;
+        this.lookahead = config.lookahead;
+        this.patternValues = config.patternValues;
+        this.currentPlayerValueScaler = config.currentPlayerValueScaler;
+        this.movesCutoff = config.movesCutoff;
     }
 
     public getCurrentSign(): number {
@@ -29,7 +41,7 @@ export class GomokuEngine extends MinimaxEngine<GomokuState, GomokuMove, GomokuH
         }
         var patternCount = this.countPattern();
         var value = patternCount.value;
-        if (value < WinValue && value > -WinValue) {
+        if (this.checkSureWin && value < WinValue && value > -WinValue) {
             var sureWinPlayer = this.whoSureWin(patternCount.maxPatterns, patternCount.minPatterns);
             if (sureWinPlayer > 0) {
                 value = WinValue;
@@ -95,8 +107,7 @@ export class GomokuEngine extends MinimaxEngine<GomokuState, GomokuMove, GomokuH
     }
 
     public getNextMoves(): GomokuMove[] {
-        let moves = [];
-        const isMaxPlayer = this.currentPlayer === GomokoPieceType.MAX;
+        let moves: number[] = [];
         for (let row = 0; row < this.boardSize; row++) {
             for (let col = 0; col < this.boardSize; col++) {
                 const index = row * this.boardSize + col;
@@ -109,7 +120,7 @@ export class GomokuEngine extends MinimaxEngine<GomokuState, GomokuMove, GomokuH
     }
 
     public getNextMovesWithCutoff(): GomokuMove[] {
-        let moves = [];
+        let moves: {index: number, value: number}[] = [];
         let lastValidIndex = -1;
         const isMaxPlayer = this.currentPlayer === GomokoPieceType.MAX;
         for (let row = 0; row < this.boardSize; row++) {
@@ -128,7 +139,7 @@ export class GomokuEngine extends MinimaxEngine<GomokuState, GomokuMove, GomokuH
                     this.undoMove(index);
                     if (isEnemyWillWin) continue; // ignore move that allow enemy to win
                     moves.push({ index: index, value: value });
-                    console.log(`------move ${index}: ${value}`);
+                    // console.log(`------move ${index}: ${value}`);
                 }
             }
         }
@@ -138,7 +149,7 @@ export class GomokuEngine extends MinimaxEngine<GomokuState, GomokuMove, GomokuH
         }
         const cutoffMoves = moves
             .sort((a, b) => isMaxPlayer ? b.value - a.value : a.value - b.value) // Sort based on `currentPlayer`
-            .slice(0, MovesCutOff) // Take the first `count` moves;
+            .slice(0, this.movesCutoff) // Take the first `count` moves;
         // console.log("NEXT MOVES: " + JSON.stringify(cutoffMoves));
         return cutoffMoves.map(move => move.index); // Extract the `index` property
     }
@@ -162,19 +173,27 @@ export class GomokuEngine extends MinimaxEngine<GomokuState, GomokuMove, GomokuH
 
     // ==========================================================
 
-    protected countPiece(piece: number, fromRow: number, fromCol: number, dx: number, dy: number) {
+    protected countPiece(piece: number, fromRow: number, fromCol: number, dx: number, dy: number): {count: number, blocked: boolean} {
         let step = 1;
         let count = 0;
+        let blocked = false;
         while (true) {
             const currRow = fromRow + step * dy;
             const currCol = fromCol + step * dx;
             if (this.isOutOfBounds(currRow, currCol)) break;
             const currIndex = currRow * this.boardSize + currCol;
-            if (this.board[currIndex] !== piece) break;
-            count++;
-            step++;
+            const currentPiece = this.board[currIndex];
+            if (currentPiece === piece) {
+                count++;
+                step++;
+            } else if (currentPiece === GomokoPieceType.EMPTY) {
+                break;
+            } else {
+                blocked = true;
+                break;
+            }
         }
-        return count;
+        return {count: count, blocked: blocked};
     }
 
     protected hasWinningLine(index: number): boolean {
@@ -185,10 +204,11 @@ export class GomokuEngine extends MinimaxEngine<GomokuState, GomokuMove, GomokuH
         const row = Math.floor(index / this.boardSize);
         const col = index % this.boardSize;
         for (const direction of FourDirections) {
-            var count = 1;
-            count += this.countPiece(piece, row, col, direction.x, direction.y);
-            if (count >= WinningCount) return true;
-            count += this.countPiece(piece, row, col, -direction.x, -direction.y);
+            var countForward = this.countPiece(piece, row, col, direction.x, direction.y);
+            var countBackward = this.countPiece(piece, row, col, -direction.x, -direction.y);
+            var count = 1 + countForward.count + countBackward.count;
+            if (count > WinningCount) return true;
+            if (countBackward.blocked && countForward.blocked) return false;
             if (count >= WinningCount) return true;
         }
         return false;
@@ -279,7 +299,7 @@ export class GomokuEngine extends MinimaxEngine<GomokuState, GomokuMove, GomokuH
                 const isMaxPlayer = piece === GomokoPieceType.MAX;
                 const patterns = isMaxPlayer ? maxPatterns : minPatterns;
                 const sign = isMaxPlayer ? 1 : -1;
-                const weight = piece === this.currentPlayer ? 1.5 : 1;
+                const scaler = piece === this.currentPlayer ? this.currentPlayerValueScaler : 1;
                 for (let directionIndex = 0; directionIndex < directionLength; directionIndex++) {
                     if (processedCells[directionIndex][index]) continue;
                     const direction = directions[directionIndex];
@@ -297,7 +317,7 @@ export class GomokuEngine extends MinimaxEngine<GomokuState, GomokuMove, GomokuH
                     if (patternValue >= WinValue) return {value: WinValue * sign, maxPatterns: maxPatterns, minPatterns: minPatterns};
                     // console.log(`PLAYER ${piece}: ${PatternType[directionPattern.pattern]} at ${index} in direction ${direction.x} ${direction.y}`);
                     // update the value
-                    value += (sign * patternValue * weight * count);
+                    value += (sign * patternValue * scaler * count);
                 }
             }
         }
@@ -365,7 +385,29 @@ export class GomokuEngine extends MinimaxEngine<GomokuState, GomokuMove, GomokuH
         return PatternMap.get(pattern) || PatternType.NONE;
     }
     
-    protected getPatternValue(pattern: PatternType): number {
-        return PatternValueMap.get(pattern) || 0;
+    public getPatternValue(pattern: PatternType): number {
+        return this.patternValues ? this.patternValues.get(pattern) || 0 : 0;
+    }
+
+    public setPatternValue(pattern: PatternType, value: number) {
+        this.patternValues?.set(pattern, value);
+        // console.log(`Change pattern ${PatternType[pattern]} 's value to: ` + value);
+    }
+
+    public setCurrentPlayerValueScaler(scaler: number) {
+        // console.log(`Change pattern currentPlayerValueScaler to: ` + scaler);
+        this.currentPlayerValueScaler = scaler;
+    }
+
+    public getCurrentPlayerValueScaler(): number {
+        return this.currentPlayerValueScaler;
+    }
+
+    public setCheckSureWin(checkSureWin: boolean) {
+        this.checkSureWin = checkSureWin;
+    }
+
+    public isCheckSureWin(): boolean {
+        return this.checkSureWin;
     }
 }

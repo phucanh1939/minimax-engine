@@ -1,33 +1,91 @@
 import { Gomoku } from "./gomoku/Gomoku";
+import { DefaultPatternValueMap, PatternType } from "./gomoku/defines/GomokuPattern";
 import { GomokoPieceType } from "./gomoku/defines/GomokuPieceType";
+import { GomokuEngineConfig } from "./gomoku/engine/GomokuEngine";
 import { GomokuEngine2 } from "./gomoku/engine/GomokuEngine2";
 // import { GomokuEngine } from "./gomoku/GomokuEngine";
 // import { GomokuEngine } from "./engine";
 
 let boardSize = 15;
-let lookahead = 3;
 let botPlayer = -1;
 let isPlayerWithBot = true;
 let gomoku = new Gomoku(boardSize);
-let engine = new GomokuEngine2(lookahead);
+const engineConfig: GomokuEngineConfig = {
+    lookahead: 3,
+    currentPlayerValueScaler: 1.5,
+    patternValues: DefaultPatternValueMap,
+    movesCutoff: 8
+};
+let engine = new GomokuEngine2(engineConfig);
+
 
 // UI
 const boardElement = document.getElementById("board")!;
 const gameStatusElement = document.getElementById("game-status")!;
 const botStatusElement = document.getElementById("bot-status")!;
 const resetButton = document.getElementById("reset-button")!;
+const undoButton = document.getElementById("undo-button")!;
 const valueSelectElement = document.getElementById("value-select") as HTMLSelectElement; // Dropdown element
 
 valueSelectElement.addEventListener("change", () => {
-    lookahead = parseInt(valueSelectElement.value); // Update lookahead when dropdown value changes
+    var lookahead = parseInt(valueSelectElement.value); // Update lookahead when dropdown value changes
     if (!lookahead || lookahead <= 0) lookahead = 1;
     engine.setLookAhead(lookahead);
 });
 
+function loadConfig() {
+    const patternToIdMap = {
+        [PatternType.OPEN_5]: "open-5",
+        [PatternType.BLOCKED_5]: "blocked-5",
+        [PatternType.BLOCKED_BROKEN_5]: "blocked-broken-5",
+        [PatternType.OPEN_4]: "open-4",
+        [PatternType.OPEN_BROKEN_5]: "open-broken-5",
+        [PatternType.BLOCKED_4]: "blocked-4",
+        [PatternType.OPEN_BROKEN_4]: "open-broken-4",
+        [PatternType.BLOCKED_BROKEN_4]: "blocked-broken-4",
+        [PatternType.OPEN_BROKEN_3]: "open-broken-3",
+        [PatternType.OPEN_3]: "open-3",
+        [PatternType.BLOCKED_3]: "blocked-3",
+        [PatternType.BLOCKED_BROKEN_3]: "blocked-broken-3",
+        [PatternType.OPEN_2]: "open-2",
+        [PatternType.OPEN_BROKEN_2]: "open-broken-2",
+    };
+
+    Object.entries(patternToIdMap).forEach(([pattern, id]) => {
+        const input = document.getElementById(id) as HTMLInputElement;
+        if (input) {
+            const value = engine.getPatternValue(Number(pattern)) || 0; // Retrieve pattern value
+            input.value = value.toString(); // Set input value
+            input.addEventListener("input", (event) => {
+                const target = event.target as HTMLInputElement;
+                const newValue = parseFloat(target.value) || 0; // Parse the input value or default to 0
+                engine.setPatternValue(Number(pattern), newValue); // Update the engine's value
+                // console.log(`Pattern ${pattern} updated to ${newValue}`);
+            });
+        }
+    });
+
+    const scalerInput = document.getElementById("scaler") as HTMLInputElement;
+    scalerInput.value = engine.getCurrentPlayerValueScaler().toString(); // Set input value
+    scalerInput.addEventListener("input", (event) => {
+        const target = event.target as HTMLInputElement;
+        const newValue = parseFloat(target.value) || 0; // Parse the input value or default to 0
+        engine.setCurrentPlayerValueScaler(newValue); // Update the engine's value
+    });
+
+    const sureWinCheckBox = document.getElementById('surewincheckbox') as HTMLInputElement;
+
+    // Set the value of the checkbox (true means checked, false means unchecked)
+    sureWinCheckBox.checked = engine.isCheckSureWin();  // You can set this to false if you want it unchecked by default
+
+    // Add an event listener to detect changes in the checkbox state
+    sureWinCheckBox.addEventListener('change', function () {
+        engine.setCheckSureWin(sureWinCheckBox.checked);
+    });
+}
 
 // Initialize the board UI
 function createBoardUI() {
-    console.log("+++++++++++++++++");
     const cellSize = 30; // Size of each cell
     const gapSize = 1; // Size of the gap between cells
 
@@ -73,6 +131,7 @@ function updateBoardUI() {
 
         htmlCell.classList.remove("player1", "player2");
     });
+    gameStatusElement.textContent = gomoku.currentPlayer !== botPlayer ? "Player Turn" : "Bot Turn";
 }
 
 // Handle cell clicks (Player's turn)
@@ -106,7 +165,7 @@ function handleCellClick(row: number, col: number) {
 }
 
 function makeMove(index: number) {
-    console.log(`PLAYER ${gomoku.currentPlayer} MOVE: ${index}`);
+    // console.log(`PLAYER ${gomoku.currentPlayer} MOVE: ${index}`);
     gomoku.makeMove(index);
     updateBoardUI();
     gameStatusElement.textContent = gomoku.currentPlayer !== botPlayer ? "Player Turn" : "Bot Turn";
@@ -158,7 +217,7 @@ function botMove() {
     checkEndGame();
 }
 
-function getCellUI(move: number):  HTMLElement | null {
+function getCellUI(move: number): HTMLElement | null {
     const cells = document.querySelectorAll(".cell");
     for (let i = 0; i < cells.length; i++) {
         const cell = cells[i];
@@ -175,7 +234,6 @@ function getCellUI(move: number):  HTMLElement | null {
 resetButton.addEventListener("click", () => {
     botPlayer = -botPlayer;
     gomoku.reset();
-    engine.setLookAhead(lookahead);
     gameStatusElement.textContent = "Player 1's Turn";
     updateBoardUI();
     if (isPlayerWithBot && gomoku.currentPlayer === botPlayer) {
@@ -184,6 +242,18 @@ resetButton.addEventListener("click", () => {
     }
 });
 
+undoButton.addEventListener("click", () => {
+    gomoku.undoMoves(2);
+    updateBoardUI();
+    console.log("_______-gomoku.currentPlayer " + gomoku.currentPlayer );
+    if (isPlayerWithBot && gomoku.currentPlayer === botPlayer) {
+        botStatusElement.textContent = "Thinking...";
+        setTimeout(() => botMove(), 10);
+        botMove();
+    }
+});
+
 // Initialize everything
 createBoardUI();
+loadConfig();
 updateBoardUI();

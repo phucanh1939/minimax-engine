@@ -79,7 +79,7 @@ export abstract class MinimaxEngine<TGameState, TGameMove, TStateHash> {
     }
 
     public findBestMove(state: TGameState): TGameMove | null {
-        let bestMove = null;
+        let bestMove: TGameMove | null = null;
         let bestValue = -Infinity;
         this.loadState(state);
         const moves = this.getNextMovesWithCutoff();

@@ -59,14 +59,14 @@ export const PatternMap = new Map<number, PatternType>([
     [0x2111010, PatternType.BLOCKED_BROKEN_4],      // oxxx_x_
     [0x2110110, PatternType.BLOCKED_BROKEN_4],      // oxx_xx_
     [0x2101110, PatternType.BLOCKED_BROKEN_4],      // ox_xxx_
-    [0x2111012, PatternType.BLOCKED_BROKEN_4],      // oxxx_xo
-    [0x2110112, PatternType.BLOCKED_BROKEN_4],      // oxx_xxo
-    [0x2101112, PatternType.BLOCKED_BROKEN_4],      // ox_xxxo
-    [0x2101112, PatternType.BLOCKED_BROKEN_4],      // ox_xxxo
+    [0x2111012, PatternType.CLOSED_4],              // oxxx_xo
+    [0x2110112, PatternType.CLOSED_4],              // oxx_xxo
+    [0x2101112, PatternType.CLOSED_4],              // ox_xxxo
+    [0x2101112, PatternType.CLOSED_4],              // ox_xxxo
     [ 0x211112, PatternType.CLOSED_4],              // oxxxxo
 
     [ 0x011100, PatternType.OPEN_3],                // _xxx__ 
-    [ 0x011102, PatternType.OPEN_3],                // _xxx_o
+    [ 0x011102, PatternType.BLOCKED_3],             // _xxx_o
     [  0x01112, PatternType.BLOCKED_3],             // _xxxo
     [ 0x211100, PatternType.BLOCKED_3],             // oxxx__
     [ 0x011010, PatternType.OPEN_BROKEN_3],         // _xx_x_
@@ -93,10 +93,9 @@ export const PatternMap = new Map<number, PatternType>([
     [   0x2112, PatternType.CLOSED_2],              // oxxo
 ]);
 
-export const PatternValueMap = new Map<PatternType, number>([
+export const DefaultPatternValueMap = new Map<PatternType, number>([
     [PatternType.OPEN_5,                WinValue],
     [PatternType.BLOCKED_5,             WinValue],
-    [PatternType.CLOSED_5,              WinValue],
     [PatternType.BLOCKED_BROKEN_5,      WinValue],
     [PatternType.OPEN_4,                    5000],
     [PatternType.OPEN_BROKEN_5,             2000],
@@ -111,6 +110,7 @@ export const PatternValueMap = new Map<PatternType, number>([
     [PatternType.OPEN_BROKEN_2,               20],
     [PatternType.BLOCKED_2,                    5],
     [PatternType.BLOCKED_BROKEN_2,             5],
+    [PatternType.CLOSED_5,                     0],
     [PatternType.CLOSED_4,                     0],
     [PatternType.CLOSED_3,                     0],
     [PatternType.CLOSED_2,                     0],

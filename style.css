@@ -4,17 +4,18 @@ body {
     background-color: #f9f9f9;
     margin: 0;
     padding: 0;
-    height: 100vh; /* Ensure full viewport height */
+    height: 100vh; /* Full viewport height */
     display: flex;
     justify-content: center;
     align-items: center;
+    position: relative;
 }
 
 #app {
     display: flex;
     flex-direction: column;
     align-items: center;
-    margin: 0; /* Remove existing margin to avoid conflicts */
+    margin: 0;
     width: 320px;
 }
 
@@ -27,7 +28,7 @@ body {
     width: calc(15 * 30px + 14 * 1px);
     height: calc(15 * 30px + 14 * 1px);
     box-sizing: border-box;
-    margin-bottom: 20px; /* Add spacing below the board */
+    margin-bottom: 20px;
 }
 
 .cell {
@@ -75,4 +76,25 @@ select {
     padding: 5px;
     font-size: 1em;
     margin-left: 5px;
+}
+
+/* Left Side Input Box Styles */
+#number-inputs {
+    position: absolute;
+    left: 20px;
+    top: 50px;
+    width: 200px;
+    text-align: left;
+}
+
+#number-inputs label {
+    display: block;
+    margin: 5px 0 3px;
+}
+
+#number-inputs input {
+    width: 100%;
+    padding: 5px;
+    margin-bottom: 10px;
+    box-sizing: border-box;
 }

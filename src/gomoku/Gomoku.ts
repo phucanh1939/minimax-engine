@@ -6,12 +6,13 @@ export class Gomoku {
     private boardSize: number;
     public board: number[];
     public currentPlayer: number = 1;
-    private lastMove: number = -1;
+    protected moves: number[] = [];
+
 
     constructor(boardSize: number) {
         this.boardSize = boardSize;
         this.board = Array(this.boardSize * this.boardSize).fill(0);
-        
+
         // fill center with a blocker
         this.blockCenter();
     }
@@ -51,7 +52,7 @@ export class Gomoku {
     public reset(): void {
         this.board = Array(this.boardSize * this.boardSize).fill(0);
         this.currentPlayer = 1;
-        this.lastMove = -1;
+        this.moves = [];
         this.blockCenter();
     }
 
@@ -59,12 +60,25 @@ export class Gomoku {
         return this.currentPlayer;
     }
 
-    public makeMove(index: number): boolean {
-        if (index < 0 || index >= this.board.length) return false;
-        if (this.board[index] !== GomokoPieceType.EMPTY) return false;
-        this.board[index] = this.currentPlayer;
-        this.currentPlayer *= -1;
-        this.lastMove = index;
+    public makeMove(move: number): boolean {
+        if (move < 0 || move >= this.board.length) return false;
+        if (this.board[move] !== GomokoPieceType.EMPTY) return false;
+        this.board[move] = this.currentPlayer;
+        this.currentPlayer = -this.currentPlayer;
+        this.moves.push(move);
+        return true;
+    }
+
+    public undoMoves(nMoves: number): boolean {
+        if (this.moves.length < nMoves) return false;
+        for (var i = 0; i < nMoves; i++) {
+            var lastMove = this.moves.pop() || -1;
+            if (lastMove >= 0) {
+                this.board[lastMove] = 0;
+                this.currentPlayer = -this.currentPlayer;
+            }
+        }
+
         return true;
     }
 
@@ -72,19 +86,27 @@ export class Gomoku {
         return row < 0 || row >= this.boardSize || col < 0 || col >= this.boardSize;
     }
 
-    protected countPiece(piece: number, fromRow: number, fromCol: number, dx: number, dy: number) {
+    protected countPiece(piece: number, fromRow: number, fromCol: number, dx: number, dy: number): { count: number, blocked: boolean } {
         let step = 1;
         let count = 0;
+        let blocked = false;
         while (true) {
             const currRow = fromRow + step * dy;
             const currCol = fromCol + step * dx;
             if (this.isOutOfBounds(currRow, currCol)) break;
             const currIndex = currRow * this.boardSize + currCol;
-            if (this.board[currIndex] !== piece) break;
-            count++;
-            step++;
+            const currentPiece = this.board[currIndex];
+            if (currentPiece === piece) {
+                count++;
+                step++;
+            } else if (currentPiece === GomokoPieceType.EMPTY) {
+                break;
+            } else {
+                blocked = true;
+                break;
+            }
         }
-        return count;
+        return { count: count, blocked: blocked };
     }
 
     protected hasWinningLine(index: number): boolean {
@@ -95,17 +117,22 @@ export class Gomoku {
         const row = Math.floor(index / this.boardSize);
         const col = index % this.boardSize;
         for (const direction of FourDirections) {
-            var count = 1;
-            count += this.countPiece(piece, row, col, direction.x, direction.y);
-            if (count >= WinningCount) return true;
-            count += this.countPiece(piece, row, col, -direction.x, -direction.y);
+            var countForward = this.countPiece(piece, row, col, direction.x, direction.y);
+            var countBackward = this.countPiece(piece, row, col, -direction.x, -direction.y);
+            var count = 1 + countForward.count + countBackward.count;
+            if (count > WinningCount) return true;
+            if (countBackward.blocked && countForward.blocked) return false;
             if (count >= WinningCount) return true;
         }
         return false;
     }
 
     public isWinningBoard(): boolean {
-        return this.hasWinningLine(this.lastMove);
+        return this.hasWinningLine(this.getLastMove());
+    }
+
+    public getLastMove() {
+        return this.moves.length > 0 ? this.moves[this.moves.length - 1] : -1;
     }
 
     public isBoardFull(): boolean {
@@ -117,7 +144,7 @@ export class Gomoku {
             board: this.board,
             boardSize: this.boardSize,
             currentPlayer: this.currentPlayer,
-            lastMove: this.lastMove
+            lastMove: this.getLastMove()
         }
     }
 }
