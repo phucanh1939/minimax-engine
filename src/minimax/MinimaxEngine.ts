@@ -92,7 +92,7 @@ export abstract class MinimaxEngine<TGameState, TGameMove, TStateHash> {
         if (moves.length === 1) return moves[0];
         const player = this.getCurrentPlayer();
         for (const move of moves) {
-            this.makeMove(move);
+            if (!this.makeMove(move)) continue;
             // if (this.isTerminal()) {
             //     this.undoMove(move);
             //     bestMove = move;

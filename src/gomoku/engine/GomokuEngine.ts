@@ -129,13 +129,11 @@ export class GomokuEngine extends MinimaxEngine<GomokuState, GomokuMove, GomokuH
 
     public getNextMovesWithCutoff(): GomokuMove[] {
         let moves: {index: number, value: number}[] = [];
-        let lastValidIndex = -1;
         const isMaxPlayer = this.currentPlayer === GomokoPieceType.MAX;
         for (let row = 0; row < this.boardSize; row++) {
             for (let col = 0; col < this.boardSize; col++) {
                 const index = row * this.boardSize + col;
                 if (this.board[index] === 0 && this.hasNeighbor(row, col, 1)) {
-                    lastValidIndex = index;
                     this.makeMove(index);
                     if (this.hasWinningLine(index)) {
                         this.undoMove(index);
@@ -147,19 +145,59 @@ export class GomokuEngine extends MinimaxEngine<GomokuState, GomokuMove, GomokuH
                     this.undoMove(index);
                     if (isEnemyWillWin) continue; // ignore move that allow enemy to win
                     moves.push({ index: index, value: value });
-                    // console.log(`------move ${index}: ${value}`);
                 }
             }
         }
         if (moves.length === 0) {
             console.log("===========> LOSE ANY WAY!!!! ");
-            return [lastValidIndex];
+            return [this.getMostBlockMove()];
         }
         const cutoffMoves = moves
             .sort((a, b) => isMaxPlayer ? b.value - a.value : a.value - b.value) // Sort based on `currentPlayer`
             .slice(0, this.movesCutoff) // Take the first `count` moves;
         // console.log("NEXT MOVES: " + JSON.stringify(cutoffMoves));
         return cutoffMoves.map(move => move.index); // Extract the `index` property
+    }
+
+    protected getMostBlockMove(): GomokuMove {
+        const opponent = -this.currentPlayer;
+        let maxValue = 0;
+        let move = -1;
+        for (let row = 0; row < this.boardSize; row++) {
+            for (let col = 0; col < this.boardSize; col++) {
+                const index = row * this.boardSize + col;
+                if (this.board[index] !== GomokoPieceType.EMPTY) continue;
+                this.setValueAt(index, opponent);
+                let patternValue = 0;
+                for (const direction of FourDirections) {
+                    let forwardPattern = this.getPatternAt(row, col, direction.x, direction.y, true);
+                    let backwardPattern = this.getPatternAt(row, col, -direction.x, -direction.y, true);
+                    patternValue += this.isSamePattern(forwardPattern, backwardPattern) ? 
+                        this.getPatternValue(forwardPattern.type):
+                        this.getPatternValue(forwardPattern.type) +  this.getPatternValue(backwardPattern.type); 
+                }
+                if (patternValue > maxValue) {
+                    move = index;
+                    maxValue = patternValue;
+                }
+                this.clearValueAt(index);
+            }
+        }
+        return move;
+    }
+
+    protected isSamePattern(pattern1: GomokuPattern, pattern2: GomokuPattern): boolean {
+        if (pattern1.piece !== pattern2.piece) return false;
+        if (pattern1.type !== pattern2.type) return false;
+        if (pattern1.indeces.length !== pattern2.indeces.length) return false;
+        let length = pattern1.indeces.length;
+        for (let i = 0; i < length; i++) {
+            if (pattern1.indeces[i] !== pattern2.indeces[i] &&              // compare same side
+                pattern1.indeces[i] !== pattern2.indeces[length - i - 1]    // compare from revese side
+            )
+                return false;
+        }
+        return true;
     }
 
     public makeMove(move: GomokuMove): boolean {
@@ -467,6 +505,6 @@ export class GomokuEngine extends MinimaxEngine<GomokuState, GomokuMove, GomokuH
 
     protected clearValueAt(index: number) {
         if (index < 0 || index >= this.board.length) return;
-        this.board[0] = 0;
+        this.board[index] = 0;
     }
 }

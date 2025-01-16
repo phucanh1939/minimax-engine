@@ -45,20 +45,6 @@ export class ThreatSearchEngine extends GomokuEngine {
         }
         return maxLevel;
     }
-    
-    protected isSamePattern(pattern1: GomokuPattern, pattern2: GomokuPattern): boolean {
-        if (pattern1.piece !== pattern2.piece) return false;
-        if (pattern1.type !== pattern2.type) return false;
-        if (pattern1.indeces.length !== pattern2.indeces.length) return false;
-        let length = pattern1.indeces.length;
-        for (let i = 0; i < length; i++) {
-            if (pattern1.indeces[i] !== pattern2.indeces[i] &&              // compare same side
-                pattern1.indeces[i] !== pattern2.indeces[length - i - 1]    // compare from revese side
-            )
-                return false;
-        }
-        return true;
-    }
 
     protected isWinningPattern(pattern: GomokuPattern): boolean {
         // TODO
