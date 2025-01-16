@@ -1,7 +1,7 @@
 import { MinimaxEngine } from "../../minimax/MinimaxEngine";
 import { GomokuHash, GomokuMove, GomokuState, Vec2 } from "../defines/GomokuState";
 import { EightDirections, FourDirections, WinningCount } from "../defines/GomokoConstant";
-import { PatternMap, PatternType, PatternValue, WinValue } from "../defines/GomokuPattern";
+import { GomokuPattern, PatternMap, PatternType, PatternValue, WinValue } from "../defines/GomokuPattern";
 import { GomokoPieceType } from "../defines/GomokuPieceType";
 
 export interface GomokuEngineConfig {
@@ -249,29 +249,58 @@ export class GomokuEngine extends MinimaxEngine<GomokuState, GomokuMove, GomokuH
         return PatternValue.BLOCKER;  // other case, return as blocker piece
     }
 
-    protected getPatternAt(row: number, col: number, direction: Vec2) {
-        if (this.isOutOfBounds(row, col)) return { indeces: [], pattern: PatternType.NONE }
+    protected getPatternAt(row: number, col: number, dx: number, dy: number, lookBack: boolean): GomokuPattern {
+        // TODO check lookback to move the start index back
+        
+        if (this.isOutOfBounds(row, col)) return { indeces: [], piece: -1, type: PatternType.NONE }
         // init to the back piece of this direction
-        const index = row * this.boardSize + col;
+        let index = row * this.boardSize + col;
         const piece = this.board[index];
         if (piece === GomokoPieceType.EMPTY || piece === GomokoPieceType.BLOCKER)
-            return { indeces: [], pattern: PatternType.NONE }
+            return { indeces: [], piece: piece, type: PatternType.NONE }
+
+        // move back to find the first index of pattern
+        if (lookBack) {
+            let countSpace = 0;
+            let currRow = row;
+            let currCol = col;
+            for (let step = 1; step <= WinningCount; step++) {
+                currRow = currRow - dy;
+                currCol = currRow - dx;
+                let currIndex = currRow * this.boardSize + currCol;
+                if (this.isOutOfBounds(currRow, currCol)) break;
+                let currValue = this.board[currIndex];
+                if (currValue == 0) {
+                    countSpace++;
+                    if (countSpace >= 2) break;
+                } else if (currValue !== piece) {
+                    break;
+                } else { // currentValue === piece
+                    index = currIndex;
+                    row = currRow;
+                    col = currCol;
+                }
+            }
+        }
+
+
         // init the pattern value to the back piece from current position
-        const backRow = row - direction.y;
-        const backCol = col - direction.x;
+        const backRow = row - dy;
+        const backCol = col - dx;
         const backIndex = backRow * this.boardSize + backCol;
         var pattern = this.getPatternValueAt(backRow, backCol, piece);
         // console.log(`Back of index ${index} - ${backIndex}: ${pattern.toString(16)}`);
         // Add current piece
         pattern = (pattern << 4) | PatternValue.PIECE;
-        let indeces = [index];
+        let indeces = [backIndex, index];
         let countEmpty = 0;
         for (let step = 1; step <= WinningCount; step++) {
-            const currRow = row + step * direction.y;
-            const currCol = col + step * direction.x;
+            const currRow = row + step * dy;
+            const currCol = col + step * dx;
             const currIndex = currRow * this.boardSize + currCol;
             const patternValue = this.getPatternValueAt(currRow, currCol, piece);
             pattern = (pattern << 4) | patternValue;
+            indeces.push(currIndex);
             // Break when reach 2nd empty space
             if (patternValue === PatternValue.EMPTY) {
                 countEmpty++;
@@ -287,8 +316,9 @@ export class GomokuEngine extends MinimaxEngine<GomokuState, GomokuMove, GomokuH
         }
 
         return {
+            type: this.getPatternType(pattern),
+            piece: piece,
             indeces: indeces,
-            pattern: this.getPatternType(pattern)
         }
     }
 
@@ -303,7 +333,7 @@ export class GomokuEngine extends MinimaxEngine<GomokuState, GomokuMove, GomokuH
             for (let col = 0; col < this.boardSize; col++) {
                 const index = row * this.boardSize + col;
                 const piece = this.board[index];
-                if (piece !== GomokoPieceType.MAX && piece !== GomokoPieceType.MIN) continue; // TODO skip empty cell & BLOCKER
+                if (piece !== GomokoPieceType.MAX && piece !== GomokoPieceType.MIN) continue;
                 const isMaxPlayer = piece === GomokoPieceType.MAX;
                 const patterns = isMaxPlayer ? maxPatterns : minPatterns;
                 const sign = isMaxPlayer ? 1 : -1;
@@ -311,17 +341,19 @@ export class GomokuEngine extends MinimaxEngine<GomokuState, GomokuMove, GomokuH
                 for (let directionIndex = 0; directionIndex < directionLength; directionIndex++) {
                     if (processedCells[directionIndex][index]) continue;
                     const direction = directions[directionIndex];
-                    var directionPattern = this.getPatternAt(row, col, direction);
-                    if (!directionPattern.pattern) continue;
-                    const pattern = directionPattern.pattern;
+                    var directionPattern = this.getPatternAt(row, col, direction.x, direction.y, false); // no need to look back (we iterate from start of the board)
+                    if (!directionPattern.type) continue;
+                    const pattern = directionPattern.type;
                     // mark all the indeces in pattern as processed for this direction
                     for (const idx of directionPattern.indeces) {
-                        processedCells[directionIndex][idx] = true;
+                        if (this.board[idx] === piece) {
+                            processedCells[directionIndex][idx] = true;
+                        }
                     }
                     // count the pattern
                     const count = (patterns.get(pattern) || 0) + 1;
-                    patterns.set(directionPattern.pattern, count);
-                    const patternValue = this.getPatternValue(directionPattern.pattern);
+                    patterns.set(directionPattern.type, count);
+                    const patternValue = this.getPatternValue(directionPattern.type);
                     if (patternValue >= WinValue) return {value: WinValue * sign, maxPatterns: maxPatterns, minPatterns: minPatterns};
                     // console.log(`PLAYER ${piece}: ${PatternType[directionPattern.pattern]} at ${index} in direction ${direction.x} ${direction.y}`);
                     // update the value

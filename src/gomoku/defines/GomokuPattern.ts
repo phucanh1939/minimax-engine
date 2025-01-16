@@ -1,3 +1,9 @@
+export interface GomokuPattern {
+    type: PatternType,
+    piece: number,
+    indeces: number[]
+}
+
 export enum PatternType {
     NONE = 0,
     OPEN_5,
