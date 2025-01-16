@@ -8,7 +8,6 @@ export class Gomoku {
     public currentPlayer: number = 1;
     protected moves: number[] = [];
 
-
     constructor(boardSize: number) {
         this.boardSize = boardSize;
         this.board = Array(this.boardSize * this.boardSize).fill(0);
@@ -86,7 +85,7 @@ export class Gomoku {
         return row < 0 || row >= this.boardSize || col < 0 || col >= this.boardSize;
     }
 
-    protected countPiece(piece: number, fromRow: number, fromCol: number, dx: number, dy: number): { count: number, blocked: boolean } {
+    protected countPiece(piece: number, fromRow: number, fromCol: number, dx: number, dy: number): {count: number, blocked: boolean} {
         let step = 1;
         let count = 0;
         let blocked = false;
@@ -99,14 +98,15 @@ export class Gomoku {
             if (currentPiece === piece) {
                 count++;
                 step++;
-            } else if (currentPiece === GomokoPieceType.EMPTY) {
+            } else if (currentPiece === GomokoPieceType.EMPTY || currentPiece === GomokoPieceType.BLOCKER) {
                 break;
             } else {
+                // only count blocked by opponent's piece
                 blocked = true;
                 break;
             }
         }
-        return { count: count, blocked: blocked };
+        return {count: count, blocked: blocked};
     }
 
     protected hasWinningLine(index: number): boolean {

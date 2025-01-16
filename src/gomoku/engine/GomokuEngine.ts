@@ -194,9 +194,10 @@ export class GomokuEngine extends MinimaxEngine<GomokuState, GomokuMove, GomokuH
             if (currentPiece === piece) {
                 count++;
                 step++;
-            } else if (currentPiece === GomokoPieceType.EMPTY) {
+            } else if (currentPiece === GomokoPieceType.EMPTY || currentPiece === GomokoPieceType.BLOCKER) {
                 break;
             } else {
+                // only count blocked by opponent's piece
                 blocked = true;
                 break;
             }
