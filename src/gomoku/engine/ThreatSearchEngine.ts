@@ -33,6 +33,7 @@ export class ThreatSearchEngine extends GomokuEngine {
 
     protected pattern2Threat(pattern: GomokuPattern): Threat | null {
         // TODO
+        return null;
     }
 
     protected getMaxThreatLevel(threats: Threat[]): number {
@@ -61,10 +62,12 @@ export class ThreatSearchEngine extends GomokuEngine {
 
     protected isWinningPattern(pattern: GomokuPattern): boolean {
         // TODO
+        return false;
     }
 
-    protected hasWinSequenceFrom(threat: Threat): boolean {
+    protected hasWinSequenceFrom(threat: Threat, minThreatLevel: number): boolean {
         // TODO
+        return false;
     }
 
     protected findMovesByPriority(): GomokuMove[] {
