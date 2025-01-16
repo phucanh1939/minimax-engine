@@ -242,11 +242,12 @@ export class GomokuEngine extends MinimaxEngine<GomokuState, GomokuMove, GomokuH
 
     // ==================================================================================
     protected getPatternValueAt(row: number, col: number, player: number): number {
-        if (this.isOutOfBounds(row, col)) return PatternValue.BLOCKER;
+        if (this.isOutOfBounds(row, col)) return PatternValue.BOUND;
         const index = row * this.boardSize + col;
         const piece = this.board[index];
         if (piece === 0) return PatternValue.EMPTY; // if cell empty, return 0
         if (piece === player) return PatternValue.PIECE; // if this is player's cell -> return pattern for count
+        if (piece === GomokoPieceType.BLOCKER) return PatternValue.BOUND; // if this is player's cell -> return pattern for count
         return PatternValue.BLOCKER;  // other case, return as blocker piece
     }
 
