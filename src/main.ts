@@ -1,8 +1,9 @@
 import { Gomoku } from "./gomoku/Gomoku";
 import { DefaultPatternValueMap, PatternType } from "./gomoku/defines/GomokuPattern";
-import { GomokoPieceType } from "./gomoku/defines/GomokuPieceType";
+import { GomokuPieceType } from "./gomoku/defines/GomokuPieceType";
 import { GomokuEngineConfig } from "./gomoku/engine/GomokuEngine";
-import { GomokuEngine2 } from "./gomoku/engine/GomokuEngine2";
+import { GomokuEngineFactory } from "./gomoku/engine/GomokuEngineFactory";
+// import { DefaultEngine } from "./gomoku/engine/DefaultEngine";
 // import { GomokuEngine } from "./gomoku/GomokuEngine";
 // import { GomokuEngine } from "./engine";
 
@@ -11,13 +12,13 @@ let botPlayer = -1;
 let isPlayerWithBot = true;
 let gomoku = new Gomoku(boardSize);
 const engineConfig: GomokuEngineConfig = {
+    type: 2,
     lookahead: 3,
     currentPlayerValueScaler: 1.5,
     patternValues: DefaultPatternValueMap,
     movesCutoff: 8
 };
-let engine = new GomokuEngine2(engineConfig);
-
+let engine = GomokuEngineFactory.create(engineConfig);
 
 // UI
 const boardElement = document.getElementById("board")!;
@@ -26,11 +27,20 @@ const botStatusElement = document.getElementById("bot-status")!;
 const resetButton = document.getElementById("reset-button")!;
 const undoButton = document.getElementById("undo-button")!;
 const valueSelectElement = document.getElementById("value-select") as HTMLSelectElement; // Dropdown element
+const engineSelectElement = document.getElementById("engine-select") as HTMLSelectElement; // Dropdown element
 
 valueSelectElement.addEventListener("change", () => {
     var lookahead = parseInt(valueSelectElement.value); // Update lookahead when dropdown value changes
     if (!lookahead || lookahead <= 0) lookahead = 1;
     engine.setLookAhead(lookahead);
+});
+
+engineSelectElement.addEventListener("change", () => {
+    var engineType = parseInt(engineSelectElement.value); // Update lookahead when dropdown value changes
+    if (!engineType || engineType <= 0) engineType = 1;
+    engineConfig.type  = engineType;
+    engine = GomokuEngineFactory.create(engineConfig);
+    resetGame();
 });
 
 function loadConfig() {
@@ -119,13 +129,13 @@ function updateBoardUI() {
 
         htmlCell.textContent = ""; // Clear the cell before updating
 
-        if (value === GomokoPieceType.MAX) {
+        if (value === GomokuPieceType.MAX) {
             htmlCell.textContent = "X"; // Player 1 (human) uses "X"
             htmlCell.classList.add("player1");
-        } else if (value === GomokoPieceType.MIN) {
+        } else if (value === GomokuPieceType.MIN) {
             htmlCell.textContent = "O"; // Player 2 (bot) uses "O"
             htmlCell.classList.add("player2");
-        } else if (value === GomokoPieceType.BLOCKER) {
+        } else if (value === GomokuPieceType.BLOCKER) {
             htmlCell.textContent = "#";
         }
 
@@ -232,6 +242,10 @@ function getCellUI(move: number): HTMLElement | null {
 
 // Reset the game
 resetButton.addEventListener("click", () => {
+    resetGame();
+});
+
+function resetGame() {
     botPlayer = -botPlayer;
     gomoku.reset();
     gameStatusElement.textContent = "Player 1's Turn";
@@ -240,7 +254,7 @@ resetButton.addEventListener("click", () => {
         var center = gomoku.center();
         makeMove(center - 1);
     }
-});
+}
 
 undoButton.addEventListener("click", () => {
     gomoku.undoMoves(2);

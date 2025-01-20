@@ -1,6 +1,6 @@
-import { FourDirections } from "../defines/GomokoConstant";
+import { FourDirections } from "../defines/GomokuConstant";
 import { GomokuPattern, PatternType } from "../defines/GomokuPattern";
-import { GomokoPieceType } from "../defines/GomokuPieceType";
+import { GomokuPieceType } from "../defines/GomokuPieceType";
 import { GomokuMove, GomokuState } from "../defines/GomokuState";
 import { GomokuEngine } from "./GomokuEngine";
 
@@ -66,8 +66,8 @@ export class ThreatSearchEngine extends GomokuEngine {
             for (let col = 0; col < this.boardSize; col++) {
                 const index = row * this.boardSize + col;
                 const cell = this.board[index];
-                if (cell !== GomokoPieceType.EMPTY) continue; // Skip cell that not empty
-                if (this.hasNeighbor(row, col, 2)) continue; // Skip cell with no neighbor
+                if (cell !== GomokuPieceType.EMPTY) continue; // Skip cell that not empty
+                if (!this.hasNeighbor(row, col, 2)) continue; // Skip cell with no neighbor
                 
                 // ######### current player #########
                 let playerValue = 0;
@@ -171,6 +171,5 @@ export class ThreatSearchEngine extends GomokuEngine {
         let bestMove = this.findBestMoveIn(moves, 1);
         this.clearState();
         return bestMove;
-
     }
 };

@@ -1,14 +1,21 @@
 import { MinimaxEngine } from "../../minimax/MinimaxEngine";
 import { GomokuHash, GomokuMove, GomokuState, Vec2 } from "../defines/GomokuState";
-import { EightDirections, FourDirections, WinningCount } from "../defines/GomokoConstant";
+import { EightDirections, FourDirections, WinningCount } from "../defines/GomokuConstant";
 import { GomokuPattern, PatternMap, PatternType, PatternValue, WinValue } from "../defines/GomokuPattern";
-import { GomokoPieceType } from "../defines/GomokuPieceType";
+import { GomokuPieceType } from "../defines/GomokuPieceType";
 
 export interface GomokuEngineConfig {
+    type: number;
     lookahead: number;
     patternValues: Map<PatternType, number> | null;
     currentPlayerValueScaler: number;
     movesCutoff: number;
+}
+
+export enum GomokuEngineType {
+    None = 0,
+    Default = 1,
+    NoDiagonal = 2,
 }
 
 export class GomokuEngine extends MinimaxEngine<GomokuState, GomokuMove, GomokuHash> {
@@ -31,7 +38,7 @@ export class GomokuEngine extends MinimaxEngine<GomokuState, GomokuMove, GomokuH
     }
 
     public getCurrentSign(): number {
-        return this.currentPlayer === GomokoPieceType.MAX ? 1 : -1;
+        return this.currentPlayer === GomokuPieceType.MAX ? 1 : -1;
     }
 
     public getCurrentPlayer(): number {
@@ -129,7 +136,7 @@ export class GomokuEngine extends MinimaxEngine<GomokuState, GomokuMove, GomokuH
 
     public getNextMovesWithCutoff(): GomokuMove[] {
         let moves: {index: number, value: number}[] = [];
-        const isMaxPlayer = this.currentPlayer === GomokoPieceType.MAX;
+        const isMaxPlayer = this.currentPlayer === GomokuPieceType.MAX;
         for (let row = 0; row < this.boardSize; row++) {
             for (let col = 0; col < this.boardSize; col++) {
                 const index = row * this.boardSize + col;
@@ -166,7 +173,7 @@ export class GomokuEngine extends MinimaxEngine<GomokuState, GomokuMove, GomokuH
         for (let row = 0; row < this.boardSize; row++) {
             for (let col = 0; col < this.boardSize; col++) {
                 const index = row * this.boardSize + col;
-                if (this.board[index] !== GomokoPieceType.EMPTY) continue;
+                if (this.board[index] !== GomokuPieceType.EMPTY) continue;
                 this.setValueAt(index, opponent);
                 let patternValue = 0;
                 for (const direction of FourDirections) {
@@ -202,7 +209,7 @@ export class GomokuEngine extends MinimaxEngine<GomokuState, GomokuMove, GomokuH
 
     public makeMove(move: GomokuMove): boolean {
         if (move < 0 || move >= this.board.length) return false;
-        if (this.board[move] !== GomokoPieceType.EMPTY) return false;
+        if (this.board[move] !== GomokuPieceType.EMPTY) return false;
         this.board[move] = this.currentPlayer;
         this.currentPlayer = -this.currentPlayer;
         this.moves.push(move);
@@ -232,7 +239,7 @@ export class GomokuEngine extends MinimaxEngine<GomokuState, GomokuMove, GomokuH
             if (currentPiece === piece) {
                 count++;
                 step++;
-            } else if (currentPiece === GomokoPieceType.EMPTY || currentPiece === GomokoPieceType.BLOCKER) {
+            } else if (currentPiece === GomokuPieceType.EMPTY || currentPiece === GomokuPieceType.BLOCKER) {
                 break;
             } else {
                 // only count blocked by opponent's piece
@@ -246,8 +253,8 @@ export class GomokuEngine extends MinimaxEngine<GomokuState, GomokuMove, GomokuH
     protected hasWinningLine(index: number): boolean {
         if (index < 0 || index >= this.board.length) return false;
         var piece = this.board[index];
-        if (piece === GomokoPieceType.EMPTY) return false;
-        if (piece === GomokoPieceType.BLOCKER) return false;
+        if (piece === GomokuPieceType.EMPTY) return false;
+        if (piece === GomokuPieceType.BLOCKER) return false;
         const row = Math.floor(index / this.boardSize);
         const col = index % this.boardSize;
         for (const direction of FourDirections) {
@@ -285,7 +292,7 @@ export class GomokuEngine extends MinimaxEngine<GomokuState, GomokuMove, GomokuH
         const piece = this.board[index];
         if (piece === 0) return PatternValue.EMPTY; // if cell empty, return 0
         if (piece === player) return PatternValue.PIECE; // if this is player's cell -> return pattern for count
-        if (piece === GomokoPieceType.BLOCKER) return PatternValue.BOUND; // if this is player's cell -> return pattern for count
+        if (piece === GomokuPieceType.BLOCKER) return PatternValue.BOUND; // if this is player's cell -> return pattern for count
         return PatternValue.BLOCKER;  // other case, return as blocker piece
     }
 
@@ -296,7 +303,7 @@ export class GomokuEngine extends MinimaxEngine<GomokuState, GomokuMove, GomokuH
         // init to the back piece of this direction
         let index = row * this.boardSize + col;
         const piece = this.board[index];
-        if (piece === GomokoPieceType.EMPTY || piece === GomokoPieceType.BLOCKER)
+        if (piece === GomokuPieceType.EMPTY || piece === GomokuPieceType.BLOCKER)
             return { indeces: [], piece: piece, type: PatternType.NONE }
 
         // move back to find the first index of pattern
@@ -306,13 +313,15 @@ export class GomokuEngine extends MinimaxEngine<GomokuState, GomokuMove, GomokuH
             let currCol = col;
             for (let step = 1; step <= WinningCount; step++) {
                 currRow = currRow - dy;
-                currCol = currRow - dx;
+                currCol = currCol - dx;
                 let currIndex = currRow * this.boardSize + currCol;
                 if (this.isOutOfBounds(currRow, currCol)) break;
                 let currValue = this.board[currIndex];
                 if (currValue == 0) {
                     countSpace++;
-                    if (countSpace >= 2) break;
+                    if (countSpace >= 2) {
+                        break;
+                    }
                 } else if (currValue !== piece) {
                     break;
                 } else { // currentValue === piece
@@ -322,8 +331,8 @@ export class GomokuEngine extends MinimaxEngine<GomokuState, GomokuMove, GomokuH
                 }
             }
         }
-
-
+        
+        
         // init the pattern value to the back piece from current position
         const backRow = row - dy;
         const backCol = col - dx;
@@ -347,11 +356,11 @@ export class GomokuEngine extends MinimaxEngine<GomokuState, GomokuMove, GomokuH
                 if (countEmpty >= 2) break;
             }
             // Break when reach a blocker
-            if (patternValue === PatternValue.BLOCKER) {
+            else if (patternValue === PatternValue.BLOCKER) {
                 break;
             }
-            if (patternValue === PatternValue.PIECE) {
-                indeces.push(currIndex);
+            else if (patternValue === PatternValue.BOUND) {
+                break;
             }
         }
 
@@ -362,8 +371,8 @@ export class GomokuEngine extends MinimaxEngine<GomokuState, GomokuMove, GomokuH
         }
     }
 
-    public countPattern() {
-        const directions = FourDirections;
+    public countPattern(directions?: {x: number, y: number}[]) {
+        directions = directions || FourDirections;
         const directionLength = directions.length;
         var value = 0;
         var maxPatterns: Map<PatternType, number> = new Map();
@@ -373,8 +382,8 @@ export class GomokuEngine extends MinimaxEngine<GomokuState, GomokuMove, GomokuH
             for (let col = 0; col < this.boardSize; col++) {
                 const index = row * this.boardSize + col;
                 const piece = this.board[index];
-                if (piece !== GomokoPieceType.MAX && piece !== GomokoPieceType.MIN) continue;
-                const isMaxPlayer = piece === GomokoPieceType.MAX;
+                if (piece !== GomokuPieceType.MAX && piece !== GomokuPieceType.MIN) continue;
+                const isMaxPlayer = piece === GomokuPieceType.MAX;
                 const patterns = isMaxPlayer ? maxPatterns : minPatterns;
                 const sign = isMaxPlayer ? 1 : -1;
                 const scaler = piece === this.currentPlayer ? this.currentPlayerValueScaler : 1;
@@ -394,7 +403,9 @@ export class GomokuEngine extends MinimaxEngine<GomokuState, GomokuMove, GomokuH
                     const count = (patterns.get(pattern) || 0) + 1;
                     patterns.set(directionPattern.type, count);
                     const patternValue = this.getPatternValue(directionPattern.type);
-                    if (patternValue >= WinValue) return {value: WinValue * sign, maxPatterns: maxPatterns, minPatterns: minPatterns};
+                    if (patternValue >= WinValue) {
+                        return {value: WinValue * sign, maxPatterns: maxPatterns, minPatterns: minPatterns};
+                    }
                     // console.log(`PLAYER ${piece}: ${PatternType[directionPattern.pattern]} at ${index} in direction ${direction.x} ${direction.y}`);
                     // update the value
                     value += (sign * patternValue * scaler * count);
@@ -411,7 +422,7 @@ export class GomokuEngine extends MinimaxEngine<GomokuState, GomokuMove, GomokuH
 
     protected whoSureWin(maxPatterns: Map<PatternType, number>, minPatterns: Map<PatternType, number>): number {
         var currentPlayerPatterns, nextPlayerPatterns;
-        if (this.currentPlayer === GomokoPieceType.MAX) {
+        if (this.currentPlayer === GomokuPieceType.MAX) {
             currentPlayerPatterns = maxPatterns;
             nextPlayerPatterns = minPatterns;
         } else {

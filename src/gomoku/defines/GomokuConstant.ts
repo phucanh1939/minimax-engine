@@ -1,5 +1,10 @@
 export const WinningCount = 5;
 
+export const TwoDirections = [
+    {x:  1, y:  0}, // horizontal
+    {x:  0, y:  1}  // vertical
+]
+
 export const FourDirections = [
     {x:  1, y:  0}, // horizontal
     {x:  0, y:  1}, // vertical

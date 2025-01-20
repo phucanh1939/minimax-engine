@@ -1,4 +1,4 @@
-export enum GomokoPieceType {
+export enum GomokuPieceType {
     EMPTY = 0,      // Empty cell
     MIN = -1,       // Second player
     MAX = 1,        // First player

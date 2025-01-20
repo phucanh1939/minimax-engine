@@ -1,5 +1,5 @@
-import { FourDirections, WinningCount } from "./defines/GomokoConstant";
-import { GomokoPieceType } from "./defines/GomokuPieceType";
+import { FourDirections, WinningCount } from "./defines/GomokuConstant";
+import { GomokuPieceType } from "./defines/GomokuPieceType";
 import { GomokuState } from "./defines/GomokuState";
 
 export class Gomoku {
@@ -17,7 +17,7 @@ export class Gomoku {
     }
 
     private blockCenter() {
-        this.board[this.center()] = GomokoPieceType.BLOCKER;
+        this.board[this.center()] = GomokuPieceType.BLOCKER;
     }
 
     public center(): number {
@@ -61,7 +61,7 @@ export class Gomoku {
 
     public makeMove(move: number): boolean {
         if (move < 0 || move >= this.board.length) return false;
-        if (this.board[move] !== GomokoPieceType.EMPTY) return false;
+        if (this.board[move] !== GomokuPieceType.EMPTY) return false;
         this.board[move] = this.currentPlayer;
         this.currentPlayer = -this.currentPlayer;
         this.moves.push(move);
@@ -98,7 +98,7 @@ export class Gomoku {
             if (currentPiece === piece) {
                 count++;
                 step++;
-            } else if (currentPiece === GomokoPieceType.EMPTY || currentPiece === GomokoPieceType.BLOCKER) {
+            } else if (currentPiece === GomokuPieceType.EMPTY || currentPiece === GomokuPieceType.BLOCKER) {
                 break;
             } else {
                 // only count blocked by opponent's piece
@@ -112,8 +112,8 @@ export class Gomoku {
     protected hasWinningLine(index: number): boolean {
         if (index < 0 || index >= this.board.length) return false;
         var piece = this.board[index];
-        if (piece === GomokoPieceType.EMPTY) return false;
-        if (piece === GomokoPieceType.BLOCKER) return false;
+        if (piece === GomokuPieceType.EMPTY) return false;
+        if (piece === GomokuPieceType.BLOCKER) return false;
         const row = Math.floor(index / this.boardSize);
         const col = index % this.boardSize;
         for (const direction of FourDirections) {
