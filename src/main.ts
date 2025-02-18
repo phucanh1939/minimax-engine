@@ -12,8 +12,8 @@ let botPlayer = -1;
 let isPlayerWithBot = true;
 let gomoku = new Gomoku(boardSize);
 const engineConfig: GomokuEngineConfig = {
-    type: 2,
-    lookahead: 3,
+    type: 1,
+    lookahead: 4,
     currentPlayerValueScaler: 1.5,
     patternValues: DefaultPatternValueMap,
     movesCutoff: 8
@@ -259,7 +259,6 @@ function resetGame() {
 undoButton.addEventListener("click", () => {
     gomoku.undoMoves(2);
     updateBoardUI();
-    console.log("_______-gomoku.currentPlayer " + gomoku.currentPlayer );
     if (isPlayerWithBot && gomoku.currentPlayer === botPlayer) {
         botStatusElement.textContent = "Thinking...";
         setTimeout(() => botMove(), 10);

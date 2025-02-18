@@ -87,24 +87,26 @@ export abstract class MinimaxEngine<TGameState, TGameMove, TStateHash> {
     }
 
     protected findBestMoveIn(moves: TGameMove[], depth: number): TGameMove | null {
-        let bestMove: TGameMove | null = null;
-        let bestValue = -Infinity;
         if (moves.length === 1) return moves[0];
+        let bestMoves: TGameMove[] = [];
+        let bestValue = -Infinity;
         const player = this.getCurrentPlayer();
+        console.log("[MinimaxEngine] <findBestMoveIn> moves count = " + moves.length);
         for (const move of moves) {
             if (!this.makeMove(move)) continue;
-            // if (this.isTerminal()) {
-            //     this.undoMove(move);
-            //     bestMove = move;
-            //     break;
-            // }
             const value = -this.negamax(depth - 1, -Infinity, Infinity, -player);
             this.undoMove(move);
             if (value > bestValue) {
-                bestMove = move;
+                bestMoves = []
+                bestMoves.push(move);
                 bestValue = value;
+            } else if (value === bestValue) {
+                bestMoves.push(move);
             }
         }
-        return bestMove;
+        if (bestMoves.length === 0) return null;
+        if (bestMoves.length === 1) return bestMoves[0];
+        const randomIndex = Math.floor(Math.random() * bestMoves.length);
+        return bestMoves[randomIndex];
     }
 }
