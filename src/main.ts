@@ -158,85 +158,17 @@ function handleCellClick(row: number, col: number) {
     // Check for game over
     if (checkEndGame()) return;
 
-    // Debug
-    printPatternInfo();
-
     // Bot move
     if (isPlayerWithBot && gomoku.currentPlayer === botPlayer) {
         botStatusElement.textContent = "Thinking...";
         setTimeout(() => botMove(), 50);
     }
-
-    // Test possible move
-    // engine.loadState(gomoku.toState());
-    // var moves = engine.getNextMoves();
-    // // console.log("MOVES: " + JSON.stringify(moves));
-    // for (const move of moves) {
-    //     makeMove(move);
-    // }
 }
 
 function makeMove(index: number) {
-    // ---- /TEST/
-    console.log(`############# /MOVE ${index}/ #############`)
-    // engine.loadState(gomoku.toState());
-    // const {priority, patternScore} = engine.getMovePriorityAndPatternScore(index);
-    // console.log("   - priority: " + GomokuMovePriority[priority]);
-    // console.log("   - patternScore: " + patternScore);
-    // engine.clearState();
-    // ---- /TEST/
-
     gomoku.makeMove(index);
-
-    // ---- /TEST/
-    // engine.loadState(gomoku.toState());
-    // var patterns = engine.getPatternsAt(index);
-    // var threatCounts = GomokuEngine.countThreatsFromPatterns(patterns);
-    // var potentialNextMoves = engine.getPotentialMovesByPriority();
-    // var patternsStr = "";
-    // var threatCountStr = "";
-    // for (const pattern of patterns) {
-    //     patternsStr += PatternType[pattern.type] + ", ";
-    // }
-    // for (const [threatLevel, count] of threatCounts) {
-    //     threatCountStr += `|level: ${threatLevel}, count: ${count}|`;
-    // }
-    // console.log("   - patterns: " + patternsStr);
-    // console.log("   - threatCountStr: " + threatCountStr);
-    // console.log("   - containsWinPattern: " + GomokuEngine.containsWinPattern(patterns));
-    // console.log("   - sum patterns values: " + engine.getSumPatternsValue(patterns));
-    // console.log("   - nextMovesPotential: " + JSON.stringify(potentialNextMoves));
-
-    // engine.clearState();
-    // console.log(`#####################################`)
-    // ---- /TEST/
-
-
     updateBoardUI();
     gameStatusElement.textContent = gomoku.currentPlayer !== botPlayer ? "Player Turn" : "Bot Turn";
-}
-
-function printPatternInfo() {
-    // console.log('--------------------------------------------------------------')
-    // var state = gomoku.toState();
-    // engine.loadState(state);
-    // var patternResult = engine.countPattern();
-    // engine.clearState();
-    // console.log (`- Patterns for MAX player (1): `)
-    // for (const [key, value] of patternResult.maxPatterns) {
-    //     console.log(`   + ${PatternType[key]}: ${value}`);
-    // }
-    // console.log (`- Patterns for MIN player (-1): `)
-    // for (const [key, value] of patternResult.minPatterns) {
-    //     console.log(`   + ${PatternType[key]}: ${value}`);
-    // }
-
-
-    // printAs2DArray(patternResult.masks, boardSize);
-    // console.log(`- Total value: ${patternResult.totalValue} `);
-    // console.log(`- Next player: ${gomoku.currentPlayer}`);
-    // console.log(`- WHO IS SURE WIN: ${gomoku.engine.whoIsSureWin(patternResult.patternCountsForMax, patternResult.patternCountsForMin, gomoku.currentPlayer)}`);
-    // console.log("================================================");
 }
 
 function checkEndGame() {
@@ -258,21 +190,7 @@ function botMove() {
     var dt = Date.now() - start;
     botStatusElement.textContent = "Time: " + dt;
     if (move) makeMove(move);
-    // printPatternInfo();
     checkEndGame();
-}
-
-function getCellUI(move: number): HTMLElement | null {
-    const cells = document.querySelectorAll(".cell");
-    for (let i = 0; i < cells.length; i++) {
-        const cell = cells[i];
-        const htmlCell = cell as HTMLElement;
-        const col = parseInt(htmlCell.dataset.x!);
-        const row = parseInt(htmlCell.dataset.y!);
-        const index = gomoku.toIndex(row, col);
-        if (index == move) return htmlCell;
-    }
-    return null;
 }
 
 // Reset the game
@@ -293,10 +211,6 @@ function resetGame() {
 }
 
 undoButton.addEventListener("click", () => {
-
-    // engine.findBestMove(gomoku.toState());
-    // return;
-
     gomoku.undoMoves(2);
     updateBoardUI();
     if (isPlayerWithBot && gomoku.currentPlayer === botPlayer) {

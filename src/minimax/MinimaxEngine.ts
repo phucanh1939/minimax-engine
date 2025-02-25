@@ -31,15 +31,6 @@ export abstract class MinimaxEngine<TGameState, TGameMove, TStateHash> {
     public abstract undoMove(move: TGameMove): boolean;
     public abstract getCurrentPlayer(): number;
 
-    protected negamaxCalls = 0;
-    protected evaluateCalls = 0;
-    protected terminalCalls = 0;
-    protected evaluateTime = 0;
-    protected ternimalExecutionTime = 0;
-    protected hashCalls = 0;
-    protected hashTime = 0;
-    protected leafNodeCount = 0;
-
     public setLookAhead(lookahead: number) {
         this.lookahead = lookahead;
     }
@@ -49,16 +40,12 @@ export abstract class MinimaxEngine<TGameState, TGameMove, TStateHash> {
     }
 
     protected negamax(depth: number, alpha: number, beta: number, color: number): number {
-        this.negamaxCalls++;
         // Save alpha
         const alphaOrigin = alpha;
 
         // Check cache
-        var startTime = Date.now();
         var hash = this.getStateHash();
         var entry = this.treeCache.get(hash);
-        this.hashTime += (Date.now()) - startTime;
-        this.hashCalls++;
         if (entry && entry.depth >= depth) {
             if (entry.flag == StateCacheFlag.Exact) return entry.value;
             else if (entry.flag == StateCacheFlag.Lower && entry.value > alpha) alpha = entry.value;
@@ -67,24 +54,8 @@ export abstract class MinimaxEngine<TGameState, TGameMove, TStateHash> {
         }
 
         // Check for leaf
-        if (depth === 0) {
-            var startTime = Date.now();
-            var result = color * this.evaluate(hash);
-            this.evaluateTime += (Date.now() - startTime);
-            this.evaluateCalls++;
-            this.leafNodeCount++;
-            return result
-        }
-        
-        var startTime = Date.now();
-        var isTerminal = this.isTerminal();
-        this.ternimalExecutionTime += Date.now() - startTime;
-        this.terminalCalls++;
-
-        if (isTerminal) {
-            this.leafNodeCount++;
-            return color * this.evaluateTerminal(hash);
-        }
+        if (depth === 0) return color * this.evaluate(hash);
+        if (this.isTerminal()) return color * this.evaluateTerminal(hash);
 
         const moves = this.getPotentialMoves();
         var maxValue = -Infinity;
@@ -114,39 +85,14 @@ export abstract class MinimaxEngine<TGameState, TGameMove, TStateHash> {
         return bestMove;
     }
 
-    protected resetTestValue() {
-        this.negamaxCalls = 0;
-        this.evaluateCalls = 0;
-        this.leafNodeCount = 0;
-        this.terminalCalls = 0;
-        this.evaluateTime = 0;
-        this.ternimalExecutionTime = 0;
-        this.hashTime = 0;
-    }
-
-    protected printTestValue() {
-        // console.log("   - negamaxCalls = " + this.negamaxCalls);
-        // console.log("   - leafNodeCount = " + this.leafNodeCount);
-        // console.log("   - evaluateCalls = " + this.evaluateCalls);
-        // console.log("   - terminalCalls = " + this.terminalCalls);
-        // console.log("   - evaluateTime = " + this.evaluateTime + " (ms)");
-        // console.log("   - ternimalExecutionTime = " + this.ternimalExecutionTime + " (ms)");
-        // console.log("   - hashTime = " + this.hashTime + " (ms)");
-    }
-
     protected findBestMoveIn(moves: TGameMove[], depth: number): TGameMove | null {
-        this.resetTestValue();
-        // if (moves.length === 1) return moves[0];
+        if (moves.length === 1) return moves[0];
         let bestMoves: TGameMove[] = [];
         let bestValue = -Infinity;
         const player = this.getCurrentPlayer();
-        // console.log("   - depth = " + depth);
-        // console.log("   - movesCount = " + moves.length);
-        var start = Date.now();
         for (const move of moves) {
             if (!this.makeMove(move)) continue;
             const value = -this.negamax(depth - 1, -Infinity, Infinity, -player);
-            // console.log(`   - Move ${move}'s value = ${value}`);
             this.undoMove(move);
             if (value > bestValue) {
                 bestMoves = []
@@ -156,10 +102,6 @@ export abstract class MinimaxEngine<TGameState, TGameMove, TStateHash> {
                 bestMoves.push(move);
             }
         }
-        var time = Date.now() - start;
-        this.printTestValue();
-        // console.log("   - totalTime = " + time);
-        // console.log("|||||||||||||||||||||||||||||||||||||||||||||");
         if (bestMoves.length === 0) return null;
         if (bestMoves.length === 1) return bestMoves[0];
         const randomIndex = Math.floor(Math.random() * bestMoves.length);
