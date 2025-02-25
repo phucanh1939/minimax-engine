@@ -1,7 +1,7 @@
 import { Gomoku } from "./gomoku/Gomoku";
 import { DefaultPatternValueMap, PatternType } from "./gomoku/defines/GomokuPattern";
 import { GomokuPieceType } from "./gomoku/defines/GomokuPieceType";
-import { GomokuEngineConfig } from "./gomoku/engine/GomokuEngine";
+import { GomokuEngine, GomokuEngineConfig, GomokuMovePriority } from "./gomoku/engine/GomokuEngine";
 import { GomokuEngineFactory } from "./gomoku/engine/GomokuEngineFactory";
 // import { DefaultEngine } from "./gomoku/engine/DefaultEngine";
 // import { GomokuEngine } from "./gomoku/GomokuEngine";
@@ -13,10 +13,10 @@ let isPlayerWithBot = true;
 let gomoku = new Gomoku(boardSize);
 const engineConfig: GomokuEngineConfig = {
     type: 1,
-    lookahead: 4,
+    lookahead: 6,
     currentPlayerValueScaler: 1.5,
     patternValues: DefaultPatternValueMap,
-    movesCutoff: 8
+    movesCutoff: 10
 };
 let engine = GomokuEngineFactory.create(engineConfig);
 
@@ -137,6 +137,8 @@ function updateBoardUI() {
             htmlCell.classList.add("player2");
         } else if (value === GomokuPieceType.BLOCKER) {
             htmlCell.textContent = "#";
+        } else {
+            if (value !== 0) htmlCell.textContent = value.toString();
         }
 
         htmlCell.classList.remove("player1", "player2");
@@ -162,7 +164,7 @@ function handleCellClick(row: number, col: number) {
     // Bot move
     if (isPlayerWithBot && gomoku.currentPlayer === botPlayer) {
         botStatusElement.textContent = "Thinking...";
-        setTimeout(() => botMove(), 10);
+        setTimeout(() => botMove(), 50);
     }
 
     // Test possible move
@@ -175,8 +177,41 @@ function handleCellClick(row: number, col: number) {
 }
 
 function makeMove(index: number) {
-    // console.log(`PLAYER ${gomoku.currentPlayer} MOVE: ${index}`);
+    // ---- /TEST/
+    console.log(`############# /MOVE ${index}/ #############`)
+    // engine.loadState(gomoku.toState());
+    // const {priority, patternScore} = engine.getMovePriorityAndPatternScore(index);
+    // console.log("   - priority: " + GomokuMovePriority[priority]);
+    // console.log("   - patternScore: " + patternScore);
+    // engine.clearState();
+    // ---- /TEST/
+
     gomoku.makeMove(index);
+
+    // ---- /TEST/
+    // engine.loadState(gomoku.toState());
+    // var patterns = engine.getPatternsAt(index);
+    // var threatCounts = GomokuEngine.countThreatsFromPatterns(patterns);
+    // var potentialNextMoves = engine.getPotentialMovesByPriority();
+    // var patternsStr = "";
+    // var threatCountStr = "";
+    // for (const pattern of patterns) {
+    //     patternsStr += PatternType[pattern.type] + ", ";
+    // }
+    // for (const [threatLevel, count] of threatCounts) {
+    //     threatCountStr += `|level: ${threatLevel}, count: ${count}|`;
+    // }
+    // console.log("   - patterns: " + patternsStr);
+    // console.log("   - threatCountStr: " + threatCountStr);
+    // console.log("   - containsWinPattern: " + GomokuEngine.containsWinPattern(patterns));
+    // console.log("   - sum patterns values: " + engine.getSumPatternsValue(patterns));
+    // console.log("   - nextMovesPotential: " + JSON.stringify(potentialNextMoves));
+
+    // engine.clearState();
+    // console.log(`#####################################`)
+    // ---- /TEST/
+
+
     updateBoardUI();
     gameStatusElement.textContent = gomoku.currentPlayer !== botPlayer ? "Player Turn" : "Bot Turn";
 }
@@ -223,7 +258,7 @@ function botMove() {
     var dt = Date.now() - start;
     botStatusElement.textContent = "Time: " + dt;
     if (move) makeMove(move);
-    printPatternInfo();
+    // printPatternInfo();
     checkEndGame();
 }
 
@@ -248,6 +283,7 @@ resetButton.addEventListener("click", () => {
 function resetGame() {
     botPlayer = -botPlayer;
     gomoku.reset();
+    engine.resetGame();
     gameStatusElement.textContent = "Player 1's Turn";
     updateBoardUI();
     if (isPlayerWithBot && gomoku.currentPlayer === botPlayer) {
@@ -257,6 +293,10 @@ function resetGame() {
 }
 
 undoButton.addEventListener("click", () => {
+
+    // engine.findBestMove(gomoku.toState());
+    // return;
+
     gomoku.undoMoves(2);
     updateBoardUI();
     if (isPlayerWithBot && gomoku.currentPlayer === botPlayer) {

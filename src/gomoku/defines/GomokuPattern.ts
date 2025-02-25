@@ -26,6 +26,7 @@ export enum PatternType {
     CLOSED_4,
     CLOSED_3,
     CLOSED_2,
+    OVER_5,
 };
 
 export enum PatternValue {
@@ -39,6 +40,14 @@ export const WinValue = 10000000;
 
 // 1: piece, 2: block (enemy piece/bound), 0: empty cell
 export const PatternMap = new Map<number, PatternType>([
+    [0x1111111, PatternType.OVER_5],                // xxxxxxx
+    [0x1111110, PatternType.OVER_5],                // xxxxxx_
+    [0x1111112, PatternType.OVER_5],                // xxxxxxo
+    [0x1111113, PatternType.OVER_5],                // xxxxxx#
+    [0x0111111, PatternType.OVER_5],                // _xxxxxx
+    [0x2111111, PatternType.OVER_5],                // oxxxxxx
+    [0x3111111, PatternType.OVER_5],                // #xxxxxx
+
     [0x0111110, PatternType.OPEN_5],                // _xxxxx_
     [0x0111112, PatternType.BLOCKED_5],             // _xxxxxo
     [0x0111113, PatternType.BLOCKED_5],             // _xxxxx#
@@ -162,10 +171,11 @@ export const PatternMap = new Map<number, PatternType>([
 ]);
 
 export const DefaultPatternValueMap = new Map<PatternType, number>([
+    [PatternType.OVER_5,                WinValue],
     [PatternType.OPEN_5,                WinValue],
     [PatternType.BLOCKED_5,             WinValue],
-    [PatternType.BLOCKED_BROKEN_5,      WinValue],
     [PatternType.OPEN_4,                    5000],
+    [PatternType.BLOCKED_BROKEN_5,          2000],
     [PatternType.OPEN_BROKEN_5,             2000],
     [PatternType.BLOCKED_4,                  500],
     [PatternType.OPEN_BROKEN_4,              500],
@@ -182,4 +192,17 @@ export const DefaultPatternValueMap = new Map<PatternType, number>([
     [PatternType.CLOSED_4,                     0],
     [PatternType.CLOSED_3,                     0],
     [PatternType.CLOSED_2,                     0],
+]);
+
+// Threat level 1 means need only 1 move to win
+// Threat level 2 means need 2 move to win
+export const PatternToThreatLevel = new Map<PatternType, number>([
+    [PatternType.OPEN_4, 1],
+    [PatternType.BLOCKED_4, 1],
+    [PatternType.OPEN_BROKEN_4, 1],
+    [PatternType.BLOCKED_BROKEN_4, 1],
+    [PatternType.OPEN_BROKEN_5, 1],
+    [PatternType.BLOCKED_BROKEN_5, 1],
+    [PatternType.OPEN_3, 2],
+    [PatternType.OPEN_BROKEN_3, 2],
 ]);

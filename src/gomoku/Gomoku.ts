@@ -121,7 +121,7 @@ export class Gomoku {
             var countBackward = this.countPiece(piece, row, col, -direction.x, -direction.y);
             var count = 1 + countForward.count + countBackward.count;
             if (count > WinningCount) return true;
-            if (countBackward.blocked && countForward.blocked) return false;
+            if (countBackward.blocked && countForward.blocked) continue;
             if (count >= WinningCount) return true;
         }
         return false;

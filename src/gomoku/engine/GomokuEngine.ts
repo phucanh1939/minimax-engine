@@ -1,7 +1,7 @@
 import { MinimaxEngine } from "../../minimax/MinimaxEngine";
 import { GomokuHash, GomokuMove, GomokuState, Vec2 } from "../defines/GomokuState";
 import { EightDirections, FourDirections, WinningCount } from "../defines/GomokuConstant";
-import { GomokuPattern, PatternMap, PatternType, PatternValue, WinValue } from "../defines/GomokuPattern";
+import { DefaultPatternValueMap, GomokuPattern, PatternMap, PatternToThreatLevel, PatternType, PatternValue, WinValue } from "../defines/GomokuPattern";
 import { GomokuPieceType } from "../defines/GomokuPieceType";
 
 export interface GomokuEngineConfig {
@@ -16,6 +16,17 @@ export enum GomokuEngineType {
     None = 0,
     Default = 1,
     NoDiagonal = 2,
+}
+
+export enum GomokuMovePriority {
+    Win = 1000,
+    BlockWin = 999,
+    CreateMultiThreatLv1 = 500,
+    BlockMultiThreatLv1 = 400,
+    CreateMultiThreatLv2 = 300,
+    BlockMultiThreatLv2 = 200,
+    CreateOrBlock1Threat = 100,
+    None = 0
 }
 
 export class GomokuEngine extends MinimaxEngine<GomokuState, GomokuMove, GomokuHash> {
@@ -70,7 +81,7 @@ export class GomokuEngine extends MinimaxEngine<GomokuState, GomokuMove, GomokuH
     }
 
     public evaluateTerminal(hash: GomokuHash): number {
-        var value =  this.currentPlayer > 0 ? WinValue : - WinValue;
+        var value = this.currentPlayer > 0 ? -WinValue : WinValue;
         this.stateCache.set(hash, value);
         return value;
     }
@@ -132,38 +143,6 @@ export class GomokuEngine extends MinimaxEngine<GomokuState, GomokuMove, GomokuH
             }
         }
         return moves;
-    }
-
-    public getNextMovesWithCutoff(): GomokuMove[] {
-        let moves: {index: number, value: number}[] = [];
-        const isMaxPlayer = this.currentPlayer === GomokuPieceType.MAX;
-        for (let row = 0; row < this.boardSize; row++) {
-            for (let col = 0; col < this.boardSize; col++) {
-                const index = row * this.boardSize + col;
-                if (this.board[index] === 0 && this.hasNeighbor(row, col, 1)) {
-                    this.makeMove(index);
-                    if (this.hasWinningLine(index)) {
-                        this.undoMove(index);
-                        return [index];
-                    }
-                    const hash = this.getStateHash();
-                    const value = this.evaluate(hash);
-                    const isEnemyWillWin = (value * this.currentPlayer) >= WinValue;
-                    this.undoMove(index);
-                    if (isEnemyWillWin) continue; // ignore move that allow enemy to win
-                    moves.push({ index: index, value: value });
-                }
-            }
-        }
-        if (moves.length === 0) {
-            console.log("===========> LOSE ANY WAY!!!! ");
-            return [this.getMostBlockMove()];
-        }
-        const cutoffMoves = moves
-            .sort((a, b) => isMaxPlayer ? b.value - a.value : a.value - b.value) // Sort based on `currentPlayer`
-            .slice(0, this.movesCutoff) // Take the first `count` moves;
-        // console.log("NEXT MOVES: " + JSON.stringify(cutoffMoves));
-        return cutoffMoves.map(move => move.index); // Extract the `index` property
     }
 
     protected getMostBlockMove(): GomokuMove {
@@ -242,8 +221,7 @@ export class GomokuEngine extends MinimaxEngine<GomokuState, GomokuMove, GomokuH
             } else if (currentPiece === GomokuPieceType.EMPTY || currentPiece === GomokuPieceType.BLOCKER) {
                 break;
             } else {
-                // only count blocked by opponent's piece
-                blocked = true;
+                blocked = true; // only count blocked by opponent's piece
                 break;
             }
         }
@@ -262,7 +240,7 @@ export class GomokuEngine extends MinimaxEngine<GomokuState, GomokuMove, GomokuH
             var countBackward = this.countPiece(piece, row, col, -direction.x, -direction.y);
             var count = 1 + countForward.count + countBackward.count;
             if (count > WinningCount) return true;
-            if (countBackward.blocked && countForward.blocked) return false;
+            if (countBackward.blocked && countForward.blocked) continue;
             if (count >= WinningCount) return true;
         }
         return false;
@@ -341,7 +319,7 @@ export class GomokuEngine extends MinimaxEngine<GomokuState, GomokuMove, GomokuH
         // console.log(`Back of index ${index} - ${backIndex}: ${pattern.toString(16)}`);
         // Add current piece
         pattern = (pattern << 4) | PatternValue.PIECE;
-        let indeces = [backIndex, index];
+        let indeces = this.board[backIndex] === piece ? [backIndex, index] : [index];
         let countEmpty = 0;
         for (let step = 1; step <= WinningCount; step++) {
             const currRow = row + step * dy;
@@ -349,7 +327,7 @@ export class GomokuEngine extends MinimaxEngine<GomokuState, GomokuMove, GomokuH
             const currIndex = currRow * this.boardSize + currCol;
             const patternValue = this.getPatternValueAt(currRow, currCol, piece);
             pattern = (pattern << 4) | patternValue;
-            indeces.push(currIndex);
+            if (this.board[currIndex] === piece) indeces.push(currIndex);
             // Break when reach 2nd empty space
             if (patternValue === PatternValue.EMPTY) {
                 countEmpty++;
@@ -482,11 +460,9 @@ export class GomokuEngine extends MinimaxEngine<GomokuState, GomokuMove, GomokuH
 
     public setPatternValue(pattern: PatternType, value: number) {
         this.patternValues?.set(pattern, value);
-        // console.log(`Change pattern ${PatternType[pattern]} 's value to: ` + value);
     }
 
     public setCurrentPlayerValueScaler(scaler: number) {
-        // console.log(`Change pattern currentPlayerValueScaler to: ` + scaler);
         this.currentPlayerValueScaler = scaler;
     }
 
@@ -517,5 +493,144 @@ export class GomokuEngine extends MinimaxEngine<GomokuState, GomokuMove, GomokuH
     protected clearValueAt(index: number) {
         if (index < 0 || index >= this.board.length) return;
         this.board[index] = 0;
+    }
+
+    public getPatternsAt(index: number): GomokuPattern[] {
+        var patterns: GomokuPattern[] = [];
+        const row = Math.floor(index / this.boardSize);
+        const col = index % this.boardSize;
+        for (const direction of FourDirections) {
+            let forwardPattern = this.getPatternAt(row, col, direction.x, direction.y, true);
+            let backwardPattern = this.getPatternAt(row, col, -direction.x, -direction.y, true);
+            // console.log("forward: " + PatternType[forwardPattern.type]);
+            // console.log("backward: " + PatternType[backwardPattern.type]);
+            let forwardPatternValue = DefaultPatternValueMap.get(forwardPattern.type) || 0;
+            let backwardPatternValue = DefaultPatternValueMap.get(backwardPattern.type) || 0;
+            if (forwardPatternValue === 0 && backwardPatternValue === 0) continue;
+            patterns.push(forwardPatternValue >= backwardPatternValue ? forwardPattern : backwardPattern);
+        }
+        return patterns;
+    }
+
+    public static containsWinPattern(patterns: GomokuPattern[]): boolean {
+        for (const pattern of patterns) {
+            if (this.isWinPattern(pattern.type)) {
+                return true
+            }
+        }
+        return false;
+    }
+
+    public static isWinPattern(pattern: PatternType): boolean {
+        return pattern == PatternType.OPEN_5 
+            || pattern == PatternType.BLOCKED_5
+            || pattern == PatternType.OVER_5;
+    }
+
+    public getSumPatternsValue(patterns: GomokuPattern[]): number {
+        var score = 0;
+        for (const pattern of patterns) {
+            score += this.getPatternValue(pattern.type);
+        }
+        return score;
+    }
+
+    // Return Map<threatLevel, numberOfThreats)
+    public static countThreatsFromPatterns(patterns: GomokuPattern[]): Map<number, number> {
+        let threatCounts: Map<number, number> = new Map();
+        for (const pattern of patterns) {
+            const patternType = pattern.type;
+            const threatLevel = PatternToThreatLevel.get(patternType) || 0;
+            const count = patternType === PatternType.OPEN_4 ? 2 : 1;
+            if (threatLevel > 0) {
+                const currentCount = threatCounts.get(threatLevel) || 0;
+                threatCounts.set(threatLevel, currentCount + count);
+            }
+        }
+        return threatCounts;
+    }
+    
+    public static patternsToMovePriority(currPlayerPatterns: GomokuPattern[], nextPlayerPatterns: GomokuPattern[]): GomokuMovePriority {
+        // Winning move
+        if (GomokuEngine.containsWinPattern(currPlayerPatterns)) return GomokuMovePriority.Win;
+
+        // Block Winning move
+        if (GomokuEngine.containsWinPattern(nextPlayerPatterns)) return GomokuMovePriority.BlockWin;
+
+        // Count threats
+        const currPlayerTheatCounts = this.countThreatsFromPatterns(currPlayerPatterns);
+        const currPlayerThreatLv1Count = currPlayerTheatCounts.get(1) || 0;
+        const currPlayerThreatLv2Count = currPlayerTheatCounts.get(2) || 0;
+        const currPlayerThreatCount = currPlayerThreatLv1Count + currPlayerThreatLv2Count;
+        const nextPlayerTheatCounts = this.countThreatsFromPatterns(nextPlayerPatterns);
+        const nextPlayerThreatLv1Count = nextPlayerTheatCounts.get(1) || 0;
+        const nextPlayerThreatLv2Count = nextPlayerTheatCounts.get(2) || 0;
+        const nextPlayerThreatCount = nextPlayerThreatLv1Count + nextPlayerThreatLv2Count;
+
+        // Create multiple lv1 threats 
+        if (currPlayerThreatLv1Count >= 2) return GomokuMovePriority.CreateMultiThreatLv1;
+        if (currPlayerThreatLv1Count === 1 && currPlayerThreatLv2Count >= 1) return GomokuMovePriority.CreateMultiThreatLv1;
+
+        // Block multiple lv1 threats
+        if (nextPlayerThreatLv1Count >= 2)  return GomokuMovePriority.BlockMultiThreatLv1;
+        if (nextPlayerThreatLv1Count === 1 && nextPlayerThreatLv2Count >= 1)  return GomokuMovePriority.BlockMultiThreatLv1;
+
+        // Create multiple lv2 threats
+        if (currPlayerThreatLv2Count >= 2) return GomokuMovePriority.CreateMultiThreatLv2;
+
+        // Block multiple lv2 threats
+        if (nextPlayerThreatLv2Count >= 2) return GomokuMovePriority.BlockMultiThreatLv2;
+
+        // Create or block 1 threat
+        if (currPlayerThreatCount === 1 || nextPlayerThreatCount == 1) return GomokuMovePriority.CreateOrBlock1Threat;
+
+        // No priority
+        return GomokuMovePriority.None;
+    }
+
+    public getMovePriorityAndPatternScore(move: GomokuMove): {priority: GomokuMovePriority, patternScore: number} {
+        this.makeMove(move);
+        const currPlayerPatterns = this.getPatternsAt(move);
+        this.undoMove(move);
+
+        this.setValueAt(move, -this.currentPlayer);
+        const nextPlayerPatterns = this.getPatternsAt(move);
+        this.clearValueAt(move);
+
+        const priority = GomokuEngine.patternsToMovePriority(currPlayerPatterns, nextPlayerPatterns);
+        const patternScore = this.getSumPatternsValue(currPlayerPatterns) + this.getSumPatternsValue(nextPlayerPatterns);
+
+        return {priority: priority, patternScore: patternScore};
+    }
+
+    public getPotentialMoves(): GomokuMove[] {
+        return this.getPotentialMovesByPriority();
+    }
+
+    public getPotentialMovesByPriority(): GomokuMove[] {
+        let moves: {move: GomokuMove, patternScore: number}[] = [];
+        let maxPriority = 0;
+        for (let row = 0; row < this.boardSize; row++) {
+            for (let col = 0; col < this.boardSize; col++) {
+                const index = row * this.boardSize + col;
+                if (this.board[index] === 0 && this.hasNeighbor(row, col, 2)) {
+                    const {priority, patternScore} = this.getMovePriorityAndPatternScore(index);
+                    if (priority === GomokuMovePriority.Win) return [index];
+                    if (priority == maxPriority) moves.push({move: index, patternScore: patternScore});
+                    if (priority > maxPriority) {
+                        maxPriority = priority;
+                        moves = [{move: index, patternScore: patternScore}];
+                    }
+                }
+            }
+        }
+
+        // Have moves with priority
+        if (maxPriority > 0) return moves.map(({ move }) => move);
+
+        // No priority move, take X move with highest score
+        return moves.sort((a, b) => b.patternScore - a.patternScore) // Sort descending by patternScore
+                .slice(0, this.movesCutoff) // Take top X elements
+                .map(({ move }) => move); // Extract only move
     }
 }

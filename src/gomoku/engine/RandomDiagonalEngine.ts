@@ -44,7 +44,7 @@ export class RandomDiagonalEngine extends GomokuEngine {
                 for (const direction of FourDirections) {
                     // forward
                     let pattern = this.getPatternAt(row, col, direction.x, direction.y, true);
-                    if (this.hasWinningLine(index) || this.isNeedToBlock(pattern)) {                        
+                    if (this.hasWinningLine(index) || this.isNeedToBlock(pattern)) {
                         this.clearValueAt(index);
                         return index;
                     }
@@ -59,7 +59,7 @@ export class RandomDiagonalEngine extends GomokuEngine {
         this.loadState(state);
         let blockMove = this.findMostBlockMove();
         if (blockMove >= 0) return blockMove;
-        let moves = this.getNextMovesWithCutoff();
+        let moves = this.getPotentialMoves();
         let bestMove = this.findBestMoveIn(moves, 1);
         this.clearState();
         return bestMove;
