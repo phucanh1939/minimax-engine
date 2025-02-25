@@ -1,15 +1,12 @@
 import { Gomoku } from "./gomoku/Gomoku";
 import { DefaultPatternValueMap, PatternType } from "./gomoku/defines/GomokuPattern";
 import { GomokuPieceType } from "./gomoku/defines/GomokuPieceType";
-import { GomokuEngine, GomokuEngineConfig, GomokuMovePriority } from "./gomoku/engine/GomokuEngine";
+import { GomokuEngineConfig } from "./gomoku/engine/GomokuEngine";
 import { GomokuEngineFactory } from "./gomoku/engine/GomokuEngineFactory";
-// import { DefaultEngine } from "./gomoku/engine/DefaultEngine";
-// import { GomokuEngine } from "./gomoku/GomokuEngine";
-// import { GomokuEngine } from "./engine";
 
 let boardSize = 15;
 let botPlayer = -1;
-let isPlayerWithBot = true;
+let isPlayerWithBot = !true;
 let gomoku = new Gomoku(boardSize);
 const engineConfig: GomokuEngineConfig = {
     type: 1,
@@ -26,6 +23,7 @@ const gameStatusElement = document.getElementById("game-status")!;
 const botStatusElement = document.getElementById("bot-status")!;
 const resetButton = document.getElementById("reset-button")!;
 const undoButton = document.getElementById("undo-button")!;
+const makeMoveButton = document.getElementById("make-move-button")!;
 const valueSelectElement = document.getElementById("value-select") as HTMLSelectElement; // Dropdown element
 const engineSelectElement = document.getElementById("engine-select") as HTMLSelectElement; // Dropdown element
 
@@ -193,11 +191,6 @@ function botMove() {
     checkEndGame();
 }
 
-// Reset the game
-resetButton.addEventListener("click", () => {
-    resetGame();
-});
-
 function resetGame() {
     botPlayer = -botPlayer;
     gomoku.reset();
@@ -210,17 +203,30 @@ function resetGame() {
     }
 }
 
-undoButton.addEventListener("click", () => {
-    gomoku.undoMoves(2);
-    updateBoardUI();
-    if (isPlayerWithBot && gomoku.currentPlayer === botPlayer) {
-        botStatusElement.textContent = "Thinking...";
-        setTimeout(() => botMove(), 10);
-        botMove();
-    }
-});
+function initButtons() {
+    resetButton.addEventListener("click", () => {
+        resetGame();
+    });
+
+    undoButton.addEventListener("click", () => {
+        gomoku.undoMoves(2);
+        updateBoardUI();
+        if (isPlayerWithBot && gomoku.currentPlayer === botPlayer) {
+            botStatusElement.textContent = "Thinking...";
+            setTimeout(() => botMove(), 10);
+            botMove();
+        }
+    });
+    
+    makeMoveButton.addEventListener("click", () => {
+        var move = engine.findBestMove(gomoku.toState());
+        if (move) makeMove(move);
+    });
+    
+}
 
 // Initialize everything
 createBoardUI();
 loadConfig();
+initButtons();
 updateBoardUI();

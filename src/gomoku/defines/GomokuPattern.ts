@@ -55,6 +55,7 @@ export const PatternMap = new Map<number, PatternType>([
     [0x2111113, PatternType.BLOCKED_5],             // oxxxxx#
     [0x3111110, PatternType.BLOCKED_5],             // #xxxxx_
     [0x3111112, PatternType.BLOCKED_5],             // #xxxxxo
+    [0x3111113, PatternType.BLOCKED_5],             // #xxxxx#
     [0x0111101, PatternType.OPEN_BROKEN_5],         // _xxxx_x
     [0x0111011, PatternType.OPEN_BROKEN_5],         // _xxx_xx
     [0x0110111, PatternType.OPEN_BROKEN_5],         // _xx_xxx
@@ -75,7 +76,12 @@ export const PatternMap = new Map<number, PatternType>([
     [ 0x011112, PatternType.BLOCKED_4],             // _xxxxo
     [ 0x011113, PatternType.BLOCKED_4],             // _xxxx#
     [0x2111100, PatternType.BLOCKED_4],             // oxxxx__
+    [0x2011110, PatternType.BLOCKED_4],             // o_xxxx_
+    [0x2111103, PatternType.BLOCKED_4],             // oxxxx_#
+    [0x2011113, PatternType.BLOCKED_4],             // o_xxxx#
     [0x3111100, PatternType.BLOCKED_4],             // #xxxx__
+    [0x3111103, PatternType.BLOCKED_4],             // #xxxx_#
+    [0x3011113, PatternType.BLOCKED_4],             // #_xxxx#
     [0x0111010, PatternType.OPEN_BROKEN_4],         // _xxx_x_
     [0x0110110, PatternType.OPEN_BROKEN_4],         // _xx_xx_
     [0x0101110, PatternType.OPEN_BROKEN_4],         // _x_xxx_
@@ -100,7 +106,9 @@ export const PatternMap = new Map<number, PatternType>([
     [0x3101112, PatternType.BLOCKED_BROKEN_4],      // #x_xxxo
     [0x2101113, PatternType.BLOCKED_BROKEN_4],      // ox_xxx#
     [0x3111102, PatternType.BLOCKED_BROKEN_4],      // #xxxx_o
-    [0x2111103, PatternType.BLOCKED_BROKEN_4],      // oxxxx_#
+    [0x3101113, PatternType.BLOCKED_BROKEN_4],      // #x_xxx#
+    [0x3110113, PatternType.BLOCKED_BROKEN_4],      // #xx_xx#
+    [0x3111013, PatternType.BLOCKED_BROKEN_4],      // #xxx_x#
     [0x2011112, PatternType.CLOSED_4],              // o_xxxxo
     [0x2101112, PatternType.CLOSED_4],              // ox_xxxo
     [0x2110112, PatternType.CLOSED_4],              // oxx_xxo
