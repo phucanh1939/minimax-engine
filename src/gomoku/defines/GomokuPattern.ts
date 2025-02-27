@@ -30,152 +30,303 @@ export enum PatternType {
 };
 
 export enum PatternValue {
-    EMPTY = 0x0,
-    PIECE = 0x1,
-    BLOCKER = 0x2,
-    BOUND = 0x3
+    EMPTY = 0x1,
+    PIECE = 0x2,
+    BLOCKER = 0x3,
+    BOUND = 0x4
 }
 
 export const WinValue = 10000000;
 
-// 1: piece, 2: block (enemy piece/bound), 0: empty cell
 export const PatternMap = new Map<number, PatternType>([
-    [0x1111111, PatternType.OVER_5],                // xxxxxxx
-    [0x1111110, PatternType.OVER_5],                // xxxxxx_
-    [0x1111112, PatternType.OVER_5],                // xxxxxxo
-    [0x1111113, PatternType.OVER_5],                // xxxxxx#
-    [0x0111111, PatternType.OVER_5],                // _xxxxxx
-    [0x2111111, PatternType.OVER_5],                // oxxxxxx
-    [0x3111111, PatternType.OVER_5],                // #xxxxxx
-
-    [0x0111110, PatternType.OPEN_5],                // _xxxxx_
-    [0x0111112, PatternType.BLOCKED_5],             // _xxxxxo
-    [0x0111113, PatternType.BLOCKED_5],             // _xxxxx#
-    [0x2111110, PatternType.BLOCKED_5],             // oxxxxx_
-    [0x2111113, PatternType.BLOCKED_5],             // oxxxxx#
-    [0x3111110, PatternType.BLOCKED_5],             // #xxxxx_
-    [0x3111112, PatternType.BLOCKED_5],             // #xxxxxo
-    [0x3111113, PatternType.BLOCKED_5],             // #xxxxx#
-    [0x0111101, PatternType.OPEN_BROKEN_5],         // _xxxx_x
-    [0x0111011, PatternType.OPEN_BROKEN_5],         // _xxx_xx
-    [0x0110111, PatternType.OPEN_BROKEN_5],         // _xx_xxx
-    [0x0101111, PatternType.OPEN_BROKEN_5],         // _x_xxxx
-    [0x2111101, PatternType.BLOCKED_BROKEN_5],      // oxxxx_x
-    [0x2111011, PatternType.BLOCKED_BROKEN_5],      // oxxx_xx
-    [0x2110111, PatternType.BLOCKED_BROKEN_5],      // oxx_xxx
-    [0x2101111, PatternType.BLOCKED_BROKEN_5],      // oxx_xxx
-    [0x3111101, PatternType.BLOCKED_BROKEN_5],      // #xxxx_x
-    [0x3111011, PatternType.BLOCKED_BROKEN_5],      // #xxx_xx
-    [0x3110111, PatternType.BLOCKED_BROKEN_5],      // #xx_xxx
-    [0x3101111, PatternType.BLOCKED_BROKEN_5],      // #xx_xxx
-    [0x2111112, PatternType.CLOSED_5],              // oxxxxxo
-
-    [0x0111100, PatternType.OPEN_4],                // _xxxx__
-    [0x0111102, PatternType.OPEN_4],                // _xxxx_o
-    [0x0111103, PatternType.OPEN_4],                // _xxxx_#
-    [ 0x011112, PatternType.BLOCKED_4],             // _xxxxo
-    [ 0x011113, PatternType.BLOCKED_4],             // _xxxx#
-    [0x2111100, PatternType.BLOCKED_4],             // oxxxx__
-    [0x2011110, PatternType.BLOCKED_4],             // o_xxxx_
-    [0x2111103, PatternType.BLOCKED_4],             // oxxxx_#
-    [0x2011113, PatternType.BLOCKED_4],             // o_xxxx#
-    [0x3111100, PatternType.BLOCKED_4],             // #xxxx__
-    [0x3111103, PatternType.BLOCKED_4],             // #xxxx_#
-    [0x3011113, PatternType.BLOCKED_4],             // #_xxxx#
-    [0x0111010, PatternType.OPEN_BROKEN_4],         // _xxx_x_
-    [0x0110110, PatternType.OPEN_BROKEN_4],         // _xx_xx_
-    [0x0101110, PatternType.OPEN_BROKEN_4],         // _x_xxx_
-    [0x0111012, PatternType.BLOCKED_BROKEN_4],      // _xxx_xo
-    [0x0111013, PatternType.BLOCKED_BROKEN_4],      // _xxx_x#
-    [0x0110112, PatternType.BLOCKED_BROKEN_4],      // _xx_xxo
-    [0x0110113, PatternType.BLOCKED_BROKEN_4],      // _xx_xx#
-    [0x0101112, PatternType.BLOCKED_BROKEN_4],      // _x_xxxo
-    [0x0101113, PatternType.BLOCKED_BROKEN_4],      // _x_xxx#
-    [0x2111010, PatternType.BLOCKED_BROKEN_4],      // oxxx_x_
-    [0x2110110, PatternType.BLOCKED_BROKEN_4],      // oxx_xx_
-    [0x2101110, PatternType.BLOCKED_BROKEN_4],      // ox_xxx_
-    [0x3111010, PatternType.BLOCKED_BROKEN_4],      // #xxx_x_
-    [0x3110110, PatternType.BLOCKED_BROKEN_4],      // #xx_xx_
-    [0x3101110, PatternType.BLOCKED_BROKEN_4],      // #x_xxx_
-    [0x3111012, PatternType.BLOCKED_BROKEN_4],      // #xxx_xo
-    [0x2111013, PatternType.BLOCKED_BROKEN_4],      // oxxx_x#
-    [0x3110112, PatternType.BLOCKED_BROKEN_4],      // #xx_xxo
-    [0x2110113, PatternType.BLOCKED_BROKEN_4],      // oxx_xx#
-    [0x3101112, PatternType.BLOCKED_BROKEN_4],      // #x_xxxo
-    [0x2101113, PatternType.BLOCKED_BROKEN_4],      // ox_xxx#
-    [0x3101112, PatternType.BLOCKED_BROKEN_4],      // #x_xxxo
-    [0x2101113, PatternType.BLOCKED_BROKEN_4],      // ox_xxx#
-    [0x3111102, PatternType.BLOCKED_BROKEN_4],      // #xxxx_o
-    [0x3101113, PatternType.BLOCKED_BROKEN_4],      // #x_xxx#
-    [0x3110113, PatternType.BLOCKED_BROKEN_4],      // #xx_xx#
-    [0x3111013, PatternType.BLOCKED_BROKEN_4],      // #xxx_x#
-    [0x2011112, PatternType.CLOSED_4],              // o_xxxxo
-    [0x2101112, PatternType.CLOSED_4],              // ox_xxxo
-    [0x2110112, PatternType.CLOSED_4],              // oxx_xxo
-    [0x2111012, PatternType.CLOSED_4],              // oxxx_xo
-    [0x2111102, PatternType.CLOSED_4],              // oxxxx_o
-    [ 0x211112, PatternType.CLOSED_4],              // oxxxxo
-    [ 0x311112, PatternType.CLOSED_4],              // #xxxxo
-    [ 0x211113, PatternType.CLOSED_4],              // oxxxx#
-
-    [ 0x011100, PatternType.OPEN_3],                // _xxx__ 
-    [ 0x011102, PatternType.BLOCKED_3],             // _xxx_o
-    [  0x01112, PatternType.BLOCKED_3],             // _xxxo
-    [ 0x011103, PatternType.BLOCKED_3],             // _xxx_#
-    [  0x01113, PatternType.BLOCKED_3],             // _xxx#
-    [ 0x211100, PatternType.BLOCKED_3],             // oxxx__
-    [ 0x311100, PatternType.BLOCKED_3],             // #xxx__
-    [ 0x011010, PatternType.OPEN_BROKEN_3],         // _xx_x_
-    [ 0x010110, PatternType.OPEN_BROKEN_3],         // _x_xx_
-    [ 0x011012, PatternType.BLOCKED_BROKEN_3],      // _xx_xo
-    [ 0x010112, PatternType.BLOCKED_BROKEN_3],      // _x_xxo
-    [ 0x011013, PatternType.BLOCKED_BROKEN_3],      // _xx_x#
-    [ 0x010113, PatternType.BLOCKED_BROKEN_3],      // _x_xx#
-    [ 0x211010, PatternType.BLOCKED_BROKEN_3],      // oxx_x_
-    [ 0x210110, PatternType.BLOCKED_BROKEN_3],      // ox_xx_
-    [ 0x210110, PatternType.BLOCKED_BROKEN_3],      // ox_xx_
-    [ 0x311010, PatternType.BLOCKED_BROKEN_3],      // #xx_x_
-    [ 0x310110, PatternType.BLOCKED_BROKEN_3],      // #x_xx_
-    [ 0x310110, PatternType.BLOCKED_BROKEN_3],      // #x_xx_
-    [ 0x201112, PatternType.CLOSED_3],              // o_xxxo
-    [ 0x301112, PatternType.CLOSED_3],              // #_xxxo
-    [ 0x201113, PatternType.CLOSED_3],              // o_xxx#
-    [ 0x210112, PatternType.CLOSED_3],              // ox_xxo
-    [ 0x310112, PatternType.CLOSED_3],              // #x_xxo
-    [ 0x210113, PatternType.CLOSED_3],              // ox_xx#
-    [ 0x210112, PatternType.CLOSED_3],              // oxx_xo
-    [ 0x310112, PatternType.CLOSED_3],              // #xx_xo
-    [ 0x210113, PatternType.CLOSED_3],              // oxx_x#
-    [ 0x211102, PatternType.CLOSED_3],              // oxxx_o
-    [ 0x311102, PatternType.CLOSED_3],              // #xxx_o
-    [ 0x211103, PatternType.CLOSED_3],              // oxxx_#
-    [  0x21112, PatternType.CLOSED_3],              // oxxxo
-    [  0x31112, PatternType.CLOSED_3],              // #xxxo
-    [  0x21113, PatternType.CLOSED_3],              // oxxx#
-
-    [  0x01100, PatternType.OPEN_2],                // _xx__
-    [  0x01102, PatternType.OPEN_2],                // _xx_o
-    [  0x01103, PatternType.OPEN_2],                // _xx_#
-    [   0x0112, PatternType.BLOCKED_2],             // _xxo
-    [   0x0113, PatternType.BLOCKED_2],             // _xx#
-    [  0x21100, PatternType.BLOCKED_2],             // oxx__
-    [  0x31100, PatternType.BLOCKED_2],             // #xx__
-    [  0x01010, PatternType.OPEN_BROKEN_2],         // _x_x_
-    [  0x01012, PatternType.BLOCKED_BROKEN_2],      // _x_xo
-    [  0x01013, PatternType.BLOCKED_BROKEN_2],      // _x_x#
-    [  0x21010, PatternType.BLOCKED_BROKEN_2],      // ox_x_
-    [  0x31010, PatternType.BLOCKED_BROKEN_2],      // #x_x_
-    [  0x21102, PatternType.CLOSED_2],              // oxx_o
-    [  0x31102, PatternType.CLOSED_2],              // #xx_o
-    [  0x21103, PatternType.CLOSED_2],              // oxx_#
-    [  0x30112, PatternType.CLOSED_2],              // #_xxo
-    [  0x20113, PatternType.CLOSED_2],              // o_xx#
-    [  0x21012, PatternType.CLOSED_2],              // ox_xo
-    [  0x31012, PatternType.CLOSED_2],              // #x_xo
-    [  0x21013, PatternType.CLOSED_2],              // ox_x#
-    [   0x2112, PatternType.CLOSED_2],              // oxxo
-    [   0x3112, PatternType.CLOSED_2],              // #xxo
-    [   0x2113, PatternType.CLOSED_2],              // oxx#
+    /* _xxxxx_ */ [0x1222221, PatternType.OPEN_5],
+    /* __xxxx_ */ [0x1122221, PatternType.OPEN_4],
+    /* _x_xxx_ */ [0x1212221, PatternType.OPEN_BROKEN_4],
+    /* _xx_xx_ */ [0x1221221, PatternType.OPEN_BROKEN_4],
+    /* _xxx_x_ */ [0x1222121, PatternType.OPEN_BROKEN_4],
+    /* _xxxx__ */ [0x1222211, PatternType.OPEN_4],
+    /* _xxxx_ */  [0x122221, PatternType.OPEN_4],
+    /* __xxx_ */  [0x112221, PatternType.OPEN_3],
+    /* _x_xx_ */  [0x121221, PatternType.OPEN_BROKEN_3],
+    /* _xx_x_ */  [0x122121, PatternType.OPEN_BROKEN_3],
+    /* _xxx__ */  [0x122211, PatternType.OPEN_3],
+    /* _xxx_ */   [0x12221, PatternType.OPEN_3],
+    /* __xx_ */   [0x11221, PatternType.OPEN_2],
+    /* _x_x_ */   [0x12121, PatternType.OPEN_BROKEN_2],
+    /* _xx__ */   [0x12211, PatternType.OPEN_2],
+    /* _xx_ */    [0x1221, PatternType.OPEN_2],
+    /* __x_ */    [0x1121, PatternType.NONE],
+    /* _x__ */    [0x1211, PatternType.NONE],
+    /* _xxxxxx */ [0x1222222, PatternType.OVER_5],
+    /* __xxxxx */ [0x1122222, PatternType.BLOCKED_5],
+    /* _x_xxxx */ [0x1212222, PatternType.BLOCKED_BROKEN_5],
+    /* _xx_xxx */ [0x1221222, PatternType.BLOCKED_BROKEN_5],
+    /* _xxx_xx */ [0x1222122, PatternType.BLOCKED_BROKEN_5],
+    /* _xxxx_x */ [0x1222212, PatternType.BLOCKED_BROKEN_5],
+    /* _xxxxx */  [0x122222, PatternType.BLOCKED_5],
+    /* __xxxx */  [0x112222, PatternType.BLOCKED_4],
+    /* _x_xxx */  [0x121222, PatternType.BLOCKED_BROKEN_4],
+    /* _xx_xx */  [0x122122, PatternType.BLOCKED_BROKEN_4],
+    /* _xxx_x */  [0x122212, PatternType.BLOCKED_BROKEN_4],
+    /* _xxxx */   [0x12222, PatternType.BLOCKED_4],
+    /* __xxx */   [0x11222, PatternType.BLOCKED_3],
+    /* _x_xx */   [0x12122, PatternType.BLOCKED_BROKEN_3],
+    /* _xx_x */   [0x12212, PatternType.BLOCKED_BROKEN_3],
+    /* _xxx */    [0x1222, PatternType.BLOCKED_3],
+    /* __xx */    [0x1122, PatternType.BLOCKED_2],
+    /* _x_x */    [0x1212, PatternType.BLOCKED_BROKEN_2],
+    /* _xxxxxo */ [0x1222223, PatternType.BLOCKED_5],
+    /* __xxxxo */ [0x1122223, PatternType.BLOCKED_4],
+    /* _x_xxxo */ [0x1212223, PatternType.BLOCKED_BROKEN_4],
+    /* _xx_xxo */ [0x1221223, PatternType.BLOCKED_BROKEN_4],
+    /* _xxx_xo */ [0x1222123, PatternType.BLOCKED_BROKEN_4],
+    /* _xxxx_o */ [0x1222213, PatternType.OPEN_4],
+    /* _xxxxo */  [0x122223, PatternType.BLOCKED_4],
+    /* __xxxo */  [0x112223, PatternType.BLOCKED_3],
+    /* _x_xxo */  [0x121223, PatternType.BLOCKED_BROKEN_3],
+    /* _xx_xo */  [0x122123, PatternType.BLOCKED_BROKEN_3],
+    /* _xxx_o */  [0x122213, PatternType.OPEN_3],
+    /* _xxxo */   [0x12223, PatternType.BLOCKED_3],
+    /* __xxo */   [0x11223, PatternType.BLOCKED_2],
+    /* _x_xo */   [0x12123, PatternType.BLOCKED_BROKEN_2],
+    /* _xx_o */   [0x12213, PatternType.BLOCKED_2],
+    /* _xxo */    [0x1223, PatternType.BLOCKED_2],
+    /* __xo */    [0x1123, PatternType.NONE],
+    /* _x_o */    [0x1213, PatternType.NONE],
+    /* _xxxxx# */ [0x1222224, PatternType.BLOCKED_5],
+    /* __xxxx# */ [0x1122224, PatternType.BLOCKED_4],
+    /* _x_xxx# */ [0x1212224, PatternType.BLOCKED_BROKEN_4],
+    /* _xx_xx# */ [0x1221224, PatternType.BLOCKED_BROKEN_4],
+    /* _xxx_x# */ [0x1222124, PatternType.BLOCKED_BROKEN_4],
+    /* _xxxx_# */ [0x1222214, PatternType.OPEN_4],
+    /* _xxxx# */  [0x122224, PatternType.BLOCKED_4],
+    /* __xxx# */  [0x112224, PatternType.BLOCKED_3],
+    /* _x_xx# */  [0x121224, PatternType.BLOCKED_BROKEN_3],
+    /* _xx_x# */  [0x122124, PatternType.BLOCKED_BROKEN_3],
+    /* _xxx_# */  [0x122214, PatternType.OPEN_3],
+    /* _xxx# */   [0x12224, PatternType.BLOCKED_3],
+    /* __xx# */   [0x11224, PatternType.BLOCKED_2],
+    /* _x_x# */   [0x12124, PatternType.BLOCKED_BROKEN_2],
+    /* _xx_# */   [0x12214, PatternType.BLOCKED_2],
+    /* _xx# */    [0x1224, PatternType.BLOCKED_2],
+    /* __x# */    [0x1124, PatternType.NONE],
+    /* _x_# */    [0x1214, PatternType.NONE],
+    /* xxxxxx_ */ [0x2222221, PatternType.OVER_5],
+    /* x_xxxx_ */ [0x2122221, PatternType.BLOCKED_BROKEN_5],
+    /* xx_xxx_ */ [0x2212221, PatternType.BLOCKED_BROKEN_5],
+    /* xxx_xx_ */ [0x2221221, PatternType.BLOCKED_BROKEN_5],
+    /* xxxx_x_ */ [0x2222121, PatternType.BLOCKED_BROKEN_5],
+    /* xxxxx__ */ [0x2222211, PatternType.BLOCKED_5],
+    /* xxxxx_ */  [0x222221, PatternType.BLOCKED_5],
+    /* x_xxx_ */  [0x212221, PatternType.BLOCKED_BROKEN_4],
+    /* xx_xx_ */  [0x221221, PatternType.BLOCKED_BROKEN_4],
+    /* xxx_x_ */  [0x222121, PatternType.BLOCKED_BROKEN_4],
+    /* xxxx__ */  [0x222211, PatternType.BLOCKED_4],
+    /* xxxx_ */   [0x22221, PatternType.BLOCKED_4],
+    /* x_xx_ */   [0x21221, PatternType.BLOCKED_BROKEN_3],
+    /* xx_x_ */   [0x22121, PatternType.BLOCKED_BROKEN_3],
+    /* xxx__ */   [0x22211, PatternType.BLOCKED_BROKEN_3],
+    /* xxx_ */    [0x2221, PatternType.BLOCKED_BROKEN_3],
+    /* x_x_ */    [0x2121, PatternType.BLOCKED_BROKEN_2],
+    /* xx__ */    [0x2211, PatternType.BLOCKED_2],
+    /* xxxxxxx */ [0x2222222, PatternType.OVER_5],
+    /* x_xxxxx */ [0x2122222, PatternType.BLOCKED_5],
+    /* xx_xxxx */ [0x2212222, PatternType.BLOCKED_BROKEN_5],
+    /* xxx_xxx */ [0x2221222, PatternType.BLOCKED_BROKEN_5],
+    /* xxxx_xx */ [0x2222122, PatternType.BLOCKED_BROKEN_5],
+    /* xxxxx_x */ [0x2222212, PatternType.BLOCKED_5],
+    /* xxxxxx */  [0x222222, PatternType.OVER_5],
+    /* x_xxxx */  [0x212222, PatternType.BLOCKED_BROKEN_5],
+    /* xx_xxx */  [0x221222, PatternType.BLOCKED_BROKEN_5],
+    /* xxx_xx */  [0x222122, PatternType.BLOCKED_BROKEN_5],
+    /* xxxx_x */  [0x222212, PatternType.BLOCKED_BROKEN_5],
+    /* xxxxx */   [0x22222, PatternType.BLOCKED_5],
+    /* x_xxx */   [0x21222, PatternType.BLOCKED_BROKEN_4],
+    /* xx_xx */   [0x22122, PatternType.BLOCKED_BROKEN_4],
+    /* xxx_x */   [0x22212, PatternType.BLOCKED_BROKEN_4],
+    /* xxxx */    [0x2222, PatternType.BLOCKED_4],
+    /* x_xx */    [0x2122, PatternType.BLOCKED_BROKEN_3],
+    /* xx_x */    [0x2212, PatternType.BLOCKED_BROKEN_3],
+    /* xxxxxxo */ [0x2222223, PatternType.OVER_5],
+    /* x_xxxxo */ [0x2122223, PatternType.BLOCKED_BROKEN_5],
+    /* xx_xxxo */ [0x2212223, PatternType.BLOCKED_BROKEN_5],
+    /* xxx_xxo */ [0x2221223, PatternType.BLOCKED_BROKEN_5],
+    /* xxxx_xo */ [0x2222123, PatternType.BLOCKED_BROKEN_5],
+    /* xxxxx_o */ [0x2222213, PatternType.BLOCKED_5],
+    /* xxxxxo */  [0x222223, PatternType.BLOCKED_5],
+    /* x_xxxo */  [0x212223, PatternType.BLOCKED_BROKEN_4],
+    /* xx_xxo */  [0x221223, PatternType.BLOCKED_BROKEN_4],
+    /* xxx_xo */  [0x222123, PatternType.BLOCKED_BROKEN_4],
+    /* xxxx_o */  [0x222213, PatternType.BLOCKED_4],
+    /* xxxxo */   [0x22223, PatternType.BLOCKED_4],
+    /* x_xxo */   [0x21223, PatternType.BLOCKED_BROKEN_3],
+    /* xx_xo */   [0x22123, PatternType.BLOCKED_BROKEN_3],
+    /* xxx_o */   [0x22213, PatternType.BLOCKED_3],
+    /* xxxo */    [0x2223, PatternType.BLOCKED_3],
+    /* x_xo */    [0x2123, PatternType.BLOCKED_BROKEN_2],
+    /* xx_o */    [0x2213, PatternType.BLOCKED_2],
+    /* xxxxxx# */ [0x2222224, PatternType.OVER_5],
+    /* x_xxxx# */ [0x2122224, PatternType.BLOCKED_BROKEN_5],
+    /* xx_xxx# */ [0x2212224, PatternType.BLOCKED_BROKEN_5],
+    /* xxx_xx# */ [0x2221224, PatternType.BLOCKED_BROKEN_5],
+    /* xxxx_x# */ [0x2222124, PatternType.BLOCKED_BROKEN_5],
+    /* xxxxx_# */ [0x2222214, PatternType.BLOCKED_5],
+    /* xxxxx# */  [0x222224, PatternType.BLOCKED_5],
+    /* x_xxx# */  [0x212224, PatternType.BLOCKED_BROKEN_4],
+    /* xx_xx# */  [0x221224, PatternType.BLOCKED_BROKEN_4],
+    /* xxx_x# */  [0x222124, PatternType.BLOCKED_BROKEN_4],
+    /* xxxx_# */  [0x222214, PatternType.BLOCKED_4],
+    /* xxxx# */   [0x22224, PatternType.BLOCKED_4],
+    /* x_xx# */   [0x21224, PatternType.BLOCKED_BROKEN_3],
+    /* xx_x# */   [0x22124, PatternType.BLOCKED_BROKEN_3],
+    /* xxx_# */   [0x22214, PatternType.BLOCKED_BROKEN_3],
+    /* xxx# */    [0x2224, PatternType.BLOCKED_3],
+    /* x_x# */    [0x2124, PatternType.BLOCKED_BROKEN_2],
+    /* xx_# */    [0x2214, PatternType.BLOCKED_2],
+    /* oxxxxx_ */ [0x3222221, PatternType.BLOCKED_5],
+    /* o_xxxx_ */ [0x3122221, PatternType.OPEN_4],
+    /* ox_xxx_ */ [0x3212221, PatternType.BLOCKED_BROKEN_4],
+    /* oxx_xx_ */ [0x3221221, PatternType.BLOCKED_BROKEN_4],
+    /* oxxx_x_ */ [0x3222121, PatternType.BLOCKED_BROKEN_4],
+    /* oxxxx__ */ [0x3222211, PatternType.BLOCKED_4],
+    /* oxxxx_ */  [0x322221, PatternType.BLOCKED_4],
+    /* o_xxx_ */  [0x312221, PatternType.OPEN_3],
+    /* ox_xx_ */  [0x321221, PatternType.BLOCKED_BROKEN_3],
+    /* oxx_x_ */  [0x322121, PatternType.BLOCKED_BROKEN_3],
+    /* oxxx__ */  [0x322211, PatternType.BLOCKED_3],
+    /* oxxx_ */   [0x32221, PatternType.BLOCKED_3],
+    /* o_xx_ */   [0x31221, PatternType.BLOCKED_2],
+    /* ox_x_ */   [0x32121, PatternType.BLOCKED_BROKEN_2],
+    /* oxx__ */   [0x32211, PatternType.BLOCKED_2],
+    /* oxx_ */    [0x3221, PatternType.BLOCKED_2],
+    /* o_x_ */    [0x3121, PatternType.NONE],
+    /* ox__ */    [0x3211, PatternType.NONE],
+    /* oxxxxxx */ [0x3222222, PatternType.OVER_5],
+    /* o_xxxxx */ [0x3122222, PatternType.BLOCKED_5],
+    /* ox_xxxx */ [0x3212222, PatternType.BLOCKED_BROKEN_5],
+    /* oxx_xxx */ [0x3221222, PatternType.BLOCKED_BROKEN_5],
+    /* oxxx_xx */ [0x3222122, PatternType.BLOCKED_BROKEN_5],
+    /* oxxxx_x */ [0x3222212, PatternType.BLOCKED_BROKEN_5],
+    /* oxxxxx */  [0x322222, PatternType.BLOCKED_5],
+    /* o_xxxx */  [0x312222, PatternType.BLOCKED_4],
+    /* ox_xxx */  [0x321222, PatternType.BLOCKED_BROKEN_4],
+    /* oxx_xx */  [0x322122, PatternType.BLOCKED_BROKEN_4],
+    /* oxxx_x */  [0x322212, PatternType.BLOCKED_BROKEN_4],
+    /* oxxxx */   [0x32222, PatternType.BLOCKED_4],
+    /* o_xxx */   [0x31222, PatternType.BLOCKED_3],
+    /* ox_xx */   [0x32122, PatternType.BLOCKED_BROKEN_3],
+    /* oxx_x */   [0x32212, PatternType.BLOCKED_BROKEN_3],
+    /* oxxx */    [0x3222, PatternType.BLOCKED_3],
+    /* o_xx */    [0x3122, PatternType.BLOCKED_2],
+    /* ox_x */    [0x3212, PatternType.BLOCKED_BROKEN_2],
+    /* oxxxxxo */ [0x3222223, PatternType.CLOSED_5],
+    /* o_xxxxo */ [0x3122223, PatternType.CLOSED_4],
+    /* ox_xxxo */ [0x3212223, PatternType.CLOSED_4],
+    /* oxx_xxo */ [0x3221223, PatternType.CLOSED_4],
+    /* oxxx_xo */ [0x3222123, PatternType.CLOSED_4],
+    /* oxxxx_o */ [0x3222213, PatternType.CLOSED_4],
+    /* oxxxxo */  [0x322223, PatternType.CLOSED_4],
+    /* o_xxxo */  [0x312223, PatternType.CLOSED_3],
+    /* ox_xxo */  [0x321223, PatternType.CLOSED_3],
+    /* oxx_xo */  [0x322123, PatternType.CLOSED_3],
+    /* oxxx_o */  [0x322213, PatternType.CLOSED_3],
+    /* oxxxo */   [0x32223, PatternType.CLOSED_3],
+    /* o_xxo */   [0x31223, PatternType.CLOSED_2],
+    /* ox_xo */   [0x32123, PatternType.CLOSED_2],
+    /* oxx_o */   [0x32213, PatternType.CLOSED_2],
+    /* oxxo */    [0x3223, PatternType.CLOSED_2],
+    /* o_xo */    [0x3123, PatternType.NONE],
+    /* ox_o */    [0x3213, PatternType.NONE],
+    /* oxxxxx# */ [0x3222224, PatternType.CLOSED_5],
+    /* o_xxxx# */ [0x3122224, PatternType.CLOSED_4],
+    /* ox_xxx# */ [0x3212224, PatternType.CLOSED_4],
+    /* oxx_xx# */ [0x3221224, PatternType.CLOSED_4],
+    /* oxxx_x# */ [0x3222124, PatternType.CLOSED_4],
+    /* oxxxx_# */ [0x3222214, PatternType.CLOSED_4],
+    /* oxxxx# */  [0x322224, PatternType.CLOSED_4],
+    /* o_xxx# */  [0x312224, PatternType.CLOSED_3],
+    /* ox_xx# */  [0x321224, PatternType.CLOSED_3],
+    /* oxx_x# */  [0x322124, PatternType.CLOSED_3],
+    /* oxxx_# */  [0x322214, PatternType.CLOSED_3],
+    /* oxxx# */   [0x32224, PatternType.CLOSED_3],
+    /* o_xx# */   [0x31224, PatternType.CLOSED_2],
+    /* ox_x# */   [0x32124, PatternType.CLOSED_2],
+    /* oxx_# */   [0x32214, PatternType.CLOSED_2],
+    /* oxx# */    [0x3224, PatternType.CLOSED_2],
+    /* o_x# */    [0x3124, PatternType.NONE],
+    /* ox_# */    [0x3214, PatternType.NONE],
+    /* #xxxxx_ */ [0x4222221, PatternType.BLOCKED_5],
+    /* #_xxxx_ */ [0x4122221, PatternType.OPEN_4],
+    /* #x_xxx_ */ [0x4212221, PatternType.BLOCKED_BROKEN_4],
+    /* #xx_xx_ */ [0x4221221, PatternType.BLOCKED_BROKEN_4],
+    /* #xxx_x_ */ [0x4222121, PatternType.BLOCKED_BROKEN_4],
+    /* #xxxx__ */ [0x4222211, PatternType.BLOCKED_4],
+    /* #xxxx_ */  [0x422221, PatternType.BLOCKED_4],
+    /* #_xxx_ */  [0x412221, PatternType.OPEN_3],
+    /* #x_xx_ */  [0x421221, PatternType.BLOCKED_BROKEN_3],
+    /* #xx_x_ */  [0x422121, PatternType.BLOCKED_BROKEN_3],
+    /* #xxx__ */  [0x422211, PatternType.BLOCKED_3],
+    /* #xxx_ */   [0x42221, PatternType.BLOCKED_3],
+    /* #_xx_ */   [0x41221, PatternType.BLOCKED_2],
+    /* #x_x_ */   [0x42121, PatternType.BLOCKED_BROKEN_2],
+    /* #xx__ */   [0x42211, PatternType.BLOCKED_2],
+    /* #xx_ */    [0x4221, PatternType.BLOCKED_2],
+    /* #_x_ */    [0x4121, PatternType.NONE],
+    /* #x__ */    [0x4211, PatternType.NONE],
+    /* #xxxxxx */ [0x4222222, PatternType.OVER_5],
+    /* #_xxxxx */ [0x4122222, PatternType.BLOCKED_5],
+    /* #x_xxxx */ [0x4212222, PatternType.BLOCKED_BROKEN_5],
+    /* #xx_xxx */ [0x4221222, PatternType.BLOCKED_BROKEN_5],
+    /* #xxx_xx */ [0x4222122, PatternType.BLOCKED_BROKEN_5],
+    /* #xxxx_x */ [0x4222212, PatternType.BLOCKED_BROKEN_5],
+    /* #xxxxx */  [0x422222, PatternType.BLOCKED_5],
+    /* #_xxxx */  [0x412222, PatternType.BLOCKED_4],
+    /* #x_xxx */  [0x421222, PatternType.BLOCKED_BROKEN_4],
+    /* #xx_xx */  [0x422122, PatternType.BLOCKED_BROKEN_4],
+    /* #xxx_x */  [0x422212, PatternType.BLOCKED_BROKEN_4],
+    /* #xxxx */   [0x42222, PatternType.BLOCKED_4],
+    /* #_xxx */   [0x41222, PatternType.BLOCKED_3],
+    /* #x_xx */   [0x42122, PatternType.BLOCKED_BROKEN_3],
+    /* #xx_x */   [0x42212, PatternType.BLOCKED_BROKEN_3],
+    /* #xxx */    [0x4222, PatternType.BLOCKED_3],
+    /* #_xx */    [0x4122, PatternType.BLOCKED_2],
+    /* #x_x */    [0x4212, PatternType.BLOCKED_BROKEN_2],
+    /* #xxxxxo */ [0x4222223, PatternType.CLOSED_5],
+    /* #_xxxxo */ [0x4122223, PatternType.CLOSED_4],
+    /* #x_xxxo */ [0x4212223, PatternType.CLOSED_4],
+    /* #xx_xxo */ [0x4221223, PatternType.CLOSED_4],
+    /* #xxx_xo */ [0x4222123, PatternType.CLOSED_4],
+    /* #xxxx_o */ [0x4222213, PatternType.CLOSED_4],
+    /* #xxxxo */  [0x422223, PatternType.CLOSED_4],
+    /* #_xxxo */  [0x412223, PatternType.CLOSED_3],
+    /* #x_xxo */  [0x421223, PatternType.CLOSED_3],
+    /* #xx_xo */  [0x422123, PatternType.CLOSED_3],
+    /* #xxx_o */  [0x422213, PatternType.CLOSED_3],
+    /* #xxxo */   [0x42223, PatternType.CLOSED_3],
+    /* #_xxo */   [0x41223, PatternType.CLOSED_2],
+    /* #x_xo */   [0x42123, PatternType.CLOSED_2],
+    /* #xx_o */   [0x42213, PatternType.CLOSED_2],
+    /* #xxo */    [0x4223, PatternType.CLOSED_2],
+    /* #_xo */    [0x4123, PatternType.NONE],
+    /* #x_o */    [0x4213, PatternType.NONE],
+    /* #xxxxx# */ [0x4222224, PatternType.CLOSED_5],
+    /* #_xxxx# */ [0x4122224, PatternType.CLOSED_4],
+    /* #x_xxx# */ [0x4212224, PatternType.CLOSED_4],
+    /* #xx_xx# */ [0x4221224, PatternType.CLOSED_4],
+    /* #xxx_x# */ [0x4222124, PatternType.CLOSED_4],
+    /* #xxxx_# */ [0x4222214, PatternType.CLOSED_4],
+    /* #xxxx# */  [0x422224, PatternType.CLOSED_4],
+    /* #_xxx# */  [0x412224, PatternType.CLOSED_3],
+    /* #x_xx# */  [0x421224, PatternType.CLOSED_3],
+    /* #xx_x# */  [0x422124, PatternType.CLOSED_3],
+    /* #xxx_# */  [0x422214, PatternType.CLOSED_3],
+    /* #xxx# */   [0x42224, PatternType.CLOSED_3],
+    /* #_xx# */   [0x41224, PatternType.CLOSED_2],
+    /* #x_x# */   [0x42124, PatternType.CLOSED_2],
+    /* #xx_# */   [0x42214, PatternType.CLOSED_2],
+    /* #xx# */    [0x4224, PatternType.CLOSED_2],
+    /* #_x# */    [0x4124, PatternType.NONE],
+    /* #x_# */    [0x4214, PatternType.NONE]
 ]);
 
 export const DefaultPatternValueMap = new Map<PatternType, number>([

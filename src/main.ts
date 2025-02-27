@@ -1,16 +1,17 @@
 import { Gomoku } from "./gomoku/Gomoku";
 import { DefaultPatternValueMap, PatternType } from "./gomoku/defines/GomokuPattern";
 import { GomokuPieceType } from "./gomoku/defines/GomokuPieceType";
+import { GomokuState } from "./gomoku/defines/GomokuState";
 import { GomokuEngineConfig } from "./gomoku/engine/GomokuEngine";
 import { GomokuEngineFactory } from "./gomoku/engine/GomokuEngineFactory";
 
 let boardSize = 15;
 let botPlayer = -1;
-let isPlayerWithBot = !true;
+let isPlayerWithBot = true;
 let gomoku = new Gomoku(boardSize);
 const engineConfig: GomokuEngineConfig = {
     type: 1,
-    lookahead: 6,
+    lookahead: 7,
     currentPlayerValueScaler: 1.5,
     patternValues: DefaultPatternValueMap,
     movesCutoff: 10
@@ -24,6 +25,7 @@ const botStatusElement = document.getElementById("bot-status")!;
 const resetButton = document.getElementById("reset-button")!;
 const undoButton = document.getElementById("undo-button")!;
 const makeMoveButton = document.getElementById("make-move-button")!;
+const testButton = document.getElementById("test-button")!;
 const valueSelectElement = document.getElementById("value-select") as HTMLSelectElement; // Dropdown element
 const engineSelectElement = document.getElementById("engine-select") as HTMLSelectElement; // Dropdown element
 
@@ -191,6 +193,24 @@ function botMove() {
     checkEndGame();
 }
 
+function test() {
+    const state: GomokuState = {
+        board:[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,-1,0,0,0,0,0,0,0,0,0,0,0,0,0,-1,0,0,0,0,0,0,0,0,0,0,0,0,0,-1,0,1,3,1,0,0,0,0,0,0,0,0,0,1,0,0,-1,1,0,1,0,0,0,0,0,0,0,0,0,0,0,0,0,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,-1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],
+        boardSize:15,
+        currentPlayer:-1,
+        lastMove:123
+    }
+    const testEngine = GomokuEngineFactory.create({
+        type: 1,
+        lookahead: 7,
+        currentPlayerValueScaler: 1.5,
+        patternValues: DefaultPatternValueMap,
+        movesCutoff: 10
+    });
+    testEngine.resetGame();
+    testEngine.findBestMove(state);
+}
+
 function resetGame() {
     botPlayer = -botPlayer;
     gomoku.reset();
@@ -222,7 +242,10 @@ function initButtons() {
         var move = engine.findBestMove(gomoku.toState());
         if (move) makeMove(move);
     });
-    
+
+    testButton.addEventListener("click", () => {
+        test();
+    });
 }
 
 // Initialize everything

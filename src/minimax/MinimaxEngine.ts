@@ -19,6 +19,10 @@ export abstract class MinimaxEngine<TGameState, TGameMove, TStateHash> {
     protected lookahead = 1;
     protected treeCache: Map<TStateHash, StateCacheEntry> = new Map();
 
+    protected timeDetectPattern = 0;
+    protected countDetectPattern = 0;
+    protected timeExec = 0;
+
     public abstract loadState(state: TGameState): void;
     public abstract clearState(): void;
     public abstract evaluate(hash: TStateHash): number;
@@ -78,10 +82,15 @@ export abstract class MinimaxEngine<TGameState, TGameMove, TStateHash> {
     }
 
     public findBestMove(state: TGameState): TGameMove | null {
+        // const startTime = performance.now();
         this.loadState(state);
         const moves = this.getPotentialMoves();
         const bestMove = this.findBestMoveIn(moves, this.lookahead);
         this.clearState();
+        // this.timeExec = performance.now() - startTime;
+        // console.log("[Minimax] <performance> timeExec: " + this.timeExec);
+        // console.log("[Minimax] <performance> timeDetectPattern: " + this.timeDetectPattern);
+        // console.log("[Minimax] <performance> countDetectPattern: " + this.countDetectPattern);
         return bestMove;
     }
 
