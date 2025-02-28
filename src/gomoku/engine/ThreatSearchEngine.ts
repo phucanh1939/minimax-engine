@@ -76,14 +76,14 @@ export class ThreatSearchEngine extends GomokuEngine {
                 // Find pattern if player make a move at this index
                 for (const direction of FourDirections) {
                     // forward
-                    let pattern = this.getPatternAt(row, col, direction.x, direction.y, true);
+                    let pattern = this.getPatternAt(index, row, col, direction.x, direction.y, true);
                     if (this.isWinningPattern(pattern)) return [index];
                     playerValue += this.getPatternValue(pattern.type);
                     let threat = this.pattern2Threat(pattern);
                     if (threat) threats.push(threat);
 
                     // backward
-                    let backPattern = this.getPatternAt(row, col, -direction.x, -direction.y, true);
+                    let backPattern = this.getPatternAt(index, row, col, -direction.x, -direction.y, true);
                     if (this.isSamePattern(backPattern, pattern)) continue; // skip same pattern 
                     if (this.isWinningPattern(backPattern)) return [index];
                     playerValue += this.getPatternValue(backPattern.type);
@@ -99,7 +99,7 @@ export class ThreatSearchEngine extends GomokuEngine {
                 this.setValueAt(index, opponent);
                 for (const direction of FourDirections) {
                     // forward
-                    let pattern = this.getPatternAt(row, col, direction.x, direction.y, true);
+                    let pattern = this.getPatternAt(index, row, col, direction.x, direction.y, true);
                     if (this.isWinningPattern(pattern)) {
                         let priority = MovePriority.BlockWin;
                         if (priority > maxPriority) {
@@ -112,7 +112,7 @@ export class ThreatSearchEngine extends GomokuEngine {
                     if (threat) opponentThreats.push(threat);
 
                     // backward
-                    let backPattern = this.getPatternAt(row, col, -direction.x, -direction.y, true);
+                    let backPattern = this.getPatternAt(index, row, col, -direction.x, -direction.y, true);
                     if (this.isSamePattern(backPattern, pattern)) continue; // skip same pattern 
                     if (this.isWinningPattern(backPattern)) {
                         let priority = MovePriority.BlockWin;

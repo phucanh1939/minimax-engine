@@ -49,6 +49,14 @@ body {
     background-color: #f00;
 }
 
+.normal-move {
+    background-color: lightgreen !important;
+}
+
+.last-move {
+    background-color: lightgreen !important;
+}
+
 #game-status {
     font-size: 1.2em;
     margin: 10px 0;

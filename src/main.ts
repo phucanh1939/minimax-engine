@@ -6,7 +6,7 @@ import { GomokuEngineFactory } from "./gomoku/engine/GomokuEngineFactory";
 
 let boardSize = 15;
 let botPlayer = -1;
-let isPlayerWithBot = !true;
+let isPlayerWithBot = true;
 let gomoku = new Gomoku(boardSize);
 const engineConfig: GomokuEngineConfig = {
     type: 1,
@@ -123,23 +123,30 @@ function updateBoardUI() {
         const htmlCell = cell as HTMLElement;
         const col = parseInt(htmlCell.dataset.x!);
         const row = parseInt(htmlCell.dataset.y!);
+        const index = row * boardSize + col;
         const value = gomoku.getValueAtRowCol(row, col);
+        const isLastMove = gomoku.getLastMove() === index;
 
         htmlCell.textContent = ""; // Clear the cell before updating
 
         if (value === GomokuPieceType.MAX) {
             htmlCell.textContent = "X"; // Player 1 (human) uses "X"
-            htmlCell.classList.add("player1");
+            // htmlCell.classList.add("player1");
         } else if (value === GomokuPieceType.MIN) {
             htmlCell.textContent = "O"; // Player 2 (bot) uses "O"
-            htmlCell.classList.add("player2");
+            // htmlCell.classList.add("player2");
         } else if (value === GomokuPieceType.BLOCKER) {
             htmlCell.textContent = "#";
         } else {
             if (value !== 0) htmlCell.textContent = value.toString();
         }
 
-        htmlCell.classList.remove("player1", "player2");
+        // if last move make the cell background green 
+        if (isLastMove) {
+            htmlCell.classList.add("last-move");
+        }  else {
+            htmlCell.classList.remove("last-move");
+        }
     });
     gameStatusElement.textContent = gomoku.currentPlayer !== botPlayer ? "Player Turn" : "Bot Turn";
 }

@@ -145,33 +145,6 @@ export class GomokuEngine extends MinimaxEngine<GomokuState, GomokuMove, GomokuH
         return moves;
     }
 
-    protected getMostBlockMove(): GomokuMove {
-        const opponent = -this.currentPlayer;
-        let maxValue = 0;
-        let move = -1;
-        for (let row = 0; row < this.boardSize; row++) {
-            for (let col = 0; col < this.boardSize; col++) {
-                const index = row * this.boardSize + col;
-                if (this.board[index] !== GomokuPieceType.EMPTY) continue;
-                this.setValueAt(index, opponent);
-                let patternValue = 0;
-                for (const direction of FourDirections) {
-                    let forwardPattern = this.getPatternAt(row, col, direction.x, direction.y, true);
-                    let backwardPattern = this.getPatternAt(row, col, -direction.x, -direction.y, true);
-                    patternValue += this.isSamePattern(forwardPattern, backwardPattern) ? 
-                        this.getPatternValue(forwardPattern.type):
-                        this.getPatternValue(forwardPattern.type) +  this.getPatternValue(backwardPattern.type); 
-                }
-                if (patternValue > maxValue) {
-                    move = index;
-                    maxValue = patternValue;
-                }
-                this.clearValueAt(index);
-            }
-        }
-        return move;
-    }
-
     protected isSamePattern(pattern1: GomokuPattern, pattern2: GomokuPattern): boolean {
         if (pattern1.piece !== pattern2.piece) return false;
         if (pattern1.type !== pattern2.type) return false;
@@ -274,15 +247,8 @@ export class GomokuEngine extends MinimaxEngine<GomokuState, GomokuMove, GomokuH
         return PatternValue.BLOCKER;  // other case, return as blocker piece
     }
 
-    protected getPatternAt(row: number, col: number, dx: number, dy: number, lookBack: boolean): GomokuPattern {
-        // TODO check lookback to move the start index back
-        
-        if (this.isOutOfBounds(row, col)) return { indeces: [], piece: -1, type: PatternType.NONE }
-        // init to the back piece of this direction
-        let index = row * this.boardSize + col;
+    protected getPatternAt(index: number, row: number, col: number, dx: number, dy: number, lookBack: boolean): GomokuPattern {
         const piece = this.board[index];
-        if (piece === GomokuPieceType.EMPTY || piece === GomokuPieceType.BLOCKER)
-            return { indeces: [], piece: piece, type: PatternType.NONE }
 
         // move back to find the first index of pattern
         if (lookBack) {
@@ -296,10 +262,8 @@ export class GomokuEngine extends MinimaxEngine<GomokuState, GomokuMove, GomokuH
                 if (this.isOutOfBounds(currRow, currCol)) break;
                 let currValue = this.board[currIndex];
                 if (currValue == 0) {
+                    if (countSpace >= 1) break;
                     countSpace++;
-                    if (countSpace >= 2) {
-                        break;
-                    }
                 } else if (currValue !== piece) {
                     break;
                 } else { // currentValue === piece
@@ -310,13 +274,11 @@ export class GomokuEngine extends MinimaxEngine<GomokuState, GomokuMove, GomokuH
             }
         }
         
-        
         // init the pattern value to the back piece from current position
         const backRow = row - dy;
         const backCol = col - dx;
         const backIndex = backRow * this.boardSize + backCol;
         var pattern = this.getPatternValueAt(backRow, backCol, piece);
-        // console.log(`Back of index ${index} - ${backIndex}: ${pattern.toString(16)}`);
         // Add current piece
         pattern = (pattern << 4) | PatternValue.PIECE;
         let indeces = this.board[backIndex] === piece ? [backIndex, index] : [index];
@@ -328,17 +290,14 @@ export class GomokuEngine extends MinimaxEngine<GomokuState, GomokuMove, GomokuH
             const patternValue = this.getPatternValueAt(currRow, currCol, piece);
             pattern = (pattern << 4) | patternValue;
             if (this.board[currIndex] === piece) indeces.push(currIndex);
-            // Break when reach 2nd empty space
             if (patternValue === PatternValue.EMPTY) {
+                if (countEmpty >= 1) break; // Break when reach 2nd empty space
                 countEmpty++;
-                if (countEmpty >= 2) break;
-            }
-            // Break when reach a blocker
-            else if (patternValue === PatternValue.BLOCKER) {
-                break;
+            } else if (patternValue === PatternValue.BLOCKER) {
+                break; // Break when reach a blocker
             }
             else if (patternValue === PatternValue.BOUND) {
-                break;
+                break; // Break when reach a bound
             }
         }
 
@@ -368,7 +327,7 @@ export class GomokuEngine extends MinimaxEngine<GomokuState, GomokuMove, GomokuH
                 for (let directionIndex = 0; directionIndex < directionLength; directionIndex++) {
                     if (processedCells[directionIndex][index]) continue;
                     const direction = directions[directionIndex];
-                    var directionPattern = this.getPatternAt(row, col, direction.x, direction.y, false); // no need to look back (we iterate from start of the board)
+                    var directionPattern = this.getPatternAt(index, row, col, direction.x, direction.y, false); // no need to look back (we iterate from start of the board)
                     if (!directionPattern.type) continue;
                     const pattern = directionPattern.type;
                     // mark all the indeces in pattern as processed for this direction
@@ -495,15 +454,11 @@ export class GomokuEngine extends MinimaxEngine<GomokuState, GomokuMove, GomokuH
         this.board[index] = 0;
     }
 
-    public getPatternsAt(index: number): GomokuPattern[] {
+    protected getPatternsAt(index: number, row: number, col: number): GomokuPattern[] {
         var patterns: GomokuPattern[] = [];
-        const row = Math.floor(index / this.boardSize);
-        const col = index % this.boardSize;
         for (const direction of FourDirections) {
-            let forwardPattern = this.getPatternAt(row, col, direction.x, direction.y, true);
-            let backwardPattern = this.getPatternAt(row, col, -direction.x, -direction.y, true);
-            // console.log("forward: " + PatternType[forwardPattern.type]);
-            // console.log("backward: " + PatternType[backwardPattern.type]);
+            let forwardPattern = this.getPatternAt(index, row, col, direction.x, direction.y, true);
+            let backwardPattern = this.getPatternAt(index, row, col, -direction.x, -direction.y, true);
             let forwardPatternValue = DefaultPatternValueMap.get(forwardPattern.type) || 0;
             let backwardPatternValue = DefaultPatternValueMap.get(backwardPattern.type) || 0;
             if (forwardPatternValue === 0 && backwardPatternValue === 0) continue;
@@ -588,13 +543,13 @@ export class GomokuEngine extends MinimaxEngine<GomokuState, GomokuMove, GomokuH
         return GomokuMovePriority.None;
     }
 
-    public getMovePriorityAndPatternScore(move: GomokuMove): {priority: GomokuMovePriority, patternScore: number} {
+    public getMovePriorityAndPatternScore(move: GomokuMove, row: number, col: number): {priority: GomokuMovePriority, patternScore: number} {
         this.makeMove(move);
-        const currPlayerPatterns = this.getPatternsAt(move);
+        const currPlayerPatterns = this.getPatternsAt(move, row, col);
         this.undoMove(move);
 
         this.setValueAt(move, -this.currentPlayer);
-        const nextPlayerPatterns = this.getPatternsAt(move);
+        const nextPlayerPatterns = this.getPatternsAt(move, row, col);
         this.clearValueAt(move);
 
         const priority = GomokuEngine.patternsToMovePriority(currPlayerPatterns, nextPlayerPatterns);
@@ -614,7 +569,7 @@ export class GomokuEngine extends MinimaxEngine<GomokuState, GomokuMove, GomokuH
             for (let col = 0; col < this.boardSize; col++) {
                 const index = row * this.boardSize + col;
                 if (this.board[index] === 0 && this.hasNeighbor(row, col, 2)) {
-                    const {priority, patternScore} = this.getMovePriorityAndPatternScore(index);
+                    const {priority, patternScore} = this.getMovePriorityAndPatternScore(index, row, col);
                     if (priority === GomokuMovePriority.Win) return [index];
                     if (priority == maxPriority) moves.push({move: index, patternScore: patternScore});
                     if (priority > maxPriority) {
