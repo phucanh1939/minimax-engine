@@ -31,6 +31,8 @@ export abstract class MinimaxEngine<TGameState, TGameMove, TStateHash> {
     public abstract undoMove(move: TGameMove): boolean;
     public abstract getCurrentPlayer(): number;
 
+    protected hashTime = 0;
+
     public setLookAhead(lookahead: number) {
         this.lookahead = lookahead;
     }
@@ -44,7 +46,9 @@ export abstract class MinimaxEngine<TGameState, TGameMove, TStateHash> {
         const alphaOrigin = alpha;
 
         // Check cache
+        const startTime = performance.now();
         var hash = this.getStateHash();
+        this.hashTime += performance.now() - startTime;
         var entry = this.treeCache.get(hash);
         if (entry && entry.depth >= depth) {
             if (entry.flag == StateCacheFlag.Exact) return entry.value;
@@ -78,10 +82,12 @@ export abstract class MinimaxEngine<TGameState, TGameMove, TStateHash> {
     }
 
     public findBestMove(state: TGameState): TGameMove | null {
+        this.hashTime = 0;
         this.loadState(state);
         const moves = this.getPotentialMoves();
         const bestMove = this.findBestMoveIn(moves, this.lookahead);
         this.clearState();
+        console.log("[engine] <performance> hashTime: " + this.hashTime);
         return bestMove;
     }
 

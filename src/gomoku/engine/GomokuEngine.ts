@@ -3,6 +3,7 @@ import { GomokuHash, GomokuMove, GomokuState, Vec2 } from "../defines/GomokuStat
 import { EightDirections, FourDirections, WinningCount } from "../defines/GomokuConstant";
 import { DefaultPatternValueMap, GomokuPattern, PatternMap, PatternToThreatLevel, PatternType, PatternValue, WinValue } from "../defines/GomokuPattern";
 import { GomokuPieceType } from "../defines/GomokuPieceType";
+import { ZobristHasher } from "./ZobristHasher";
 
 export interface GomokuEngineConfig {
     type: number;
@@ -34,11 +35,12 @@ export class GomokuEngine extends MinimaxEngine<GomokuState, GomokuMove, GomokuH
     protected boardSize: number = 0;
     protected currentPlayer: number = 0;
     protected moves: GomokuMove[] = [];
-    protected stateCache: Map<number, number> = new Map();
+    protected stateCache: Map<GomokuHash, number> = new Map();
     protected patternValues: Map<PatternType, number> | null;
     protected currentPlayerValueScaler: number;
     protected movesCutoff: number;
     protected checkSureWin: boolean = true;
+    protected hasher: ZobristHasher | null = null;
 
     constructor(config: GomokuEngineConfig) {
         super();
@@ -90,34 +92,55 @@ export class GomokuEngine extends MinimaxEngine<GomokuState, GomokuMove, GomokuH
         this.board = state.board;
         this.boardSize = state.boardSize;
         this.currentPlayer = state.currentPlayer;
+        this.hasher = state.hashser;
         this.moves.push(state.lastMove);
     }
 
     public clearState(): void {
         this.moves = [];
+        this.hasher = null;
+        this.board = [];
+        this.currentPlayer = 0;
+        this.boardSize = 0;
     }
 
     public resetGame(): void {
         super.resetGame();
+        this.clearState();
         this.stateCache.clear();
     }
 
-    public getStateHash(): number {
-        const base = 31; // A small prime number for hashing
-        const mod = 1e9 + 7; // A large prime number for modulo
-        const addition = 10; // to make value positive
+    // public getStateHash(): bigint {
+    //     const base = 31; // A small prime number for hashing
+    //     const mod = 1e9 + 7; // A large prime number for modulo
+    //     const addition = 10; // to make value positive
     
-        let hash = 0;
+    //     let hash = 0;
     
-        // Calculate the hash for the board
-        for (let i = 0; i < this.board.length; i++) {
-            hash = (hash * base + this.board[i] + addition) % mod;
+    //     // Calculate the hash for the board
+    //     for (let i = 0; i < this.board.length; i++) {
+    //         hash = (hash * base + this.board[i] + addition) % mod;
+    //     }
+    
+    //     // Incorporate the currentPlayer into the hash
+    //     hash = (hash * base + this.currentPlayer + addition) % mod;
+    
+    //     return BigInt(hash);
+    // }
+
+    protected createHashser(): ZobristHasher {
+        var hasher = new ZobristHasher(this.boardSize);
+        const boardLength = this.board.length;
+        for (let i = 0; i < boardLength; i++) {
+            const value = this.board[i];
+            if (value !== 0) hasher.setValue(i, value);
         }
-    
-        // Incorporate the currentPlayer into the hash
-        hash = (hash * base + this.currentPlayer + addition) % mod;
-    
-        return hash;
+        return hasher;
+    }
+
+    public getStateHash(): GomokuHash {
+        if (!this.hasher) this.hasher = this.createHashser();
+        return this.hasher.getHash();
     }
 
     public getLastMove(): GomokuMove {
@@ -163,6 +186,8 @@ export class GomokuEngine extends MinimaxEngine<GomokuState, GomokuMove, GomokuH
         if (move < 0 || move >= this.board.length) return false;
         if (this.board[move] !== GomokuPieceType.EMPTY) return false;
         this.board[move] = this.currentPlayer;
+        if (!this.hasher) this.hasher = this.createHashser();
+        this.hasher.setValue(move, this.currentPlayer);
         this.currentPlayer = -this.currentPlayer;
         this.moves.push(move);
         return true;
@@ -170,6 +195,10 @@ export class GomokuEngine extends MinimaxEngine<GomokuState, GomokuMove, GomokuH
 
     public undoMove(move: GomokuMove): boolean {
         if (move < 0 || move >= this.board.length) return false;
+        const currentValue = this.board[move];
+        if (currentValue === 0) return false;
+        if (!this.hasher) this.hasher = this.createHashser();
+        this.hasher.clearValue(move, currentValue);
         this.board[move] = 0;
         this.currentPlayer = -this.currentPlayer;
         this.moves.pop();
@@ -447,11 +476,17 @@ export class GomokuEngine extends MinimaxEngine<GomokuState, GomokuMove, GomokuH
     protected setValueAt(index: number, value: number) {
         if (index < 0 || index >= this.board.length) return;
         this.board[index] = value;
+        if (!this.hasher) this.hasher = this.createHashser();
+        this.hasher.setValue(index, value);
     }
 
     protected clearValueAt(index: number) {
         if (index < 0 || index >= this.board.length) return;
+        const value = this.board[index];
+        if (value === 0) return;
         this.board[index] = 0;
+        if (!this.hasher) this.hasher = this.createHashser();
+        this.hasher.setValue(index, value);
     }
 
     protected getPatternsAt(index: number, row: number, col: number): GomokuPattern[] {

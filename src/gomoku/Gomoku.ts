@@ -1,23 +1,27 @@
 import { FourDirections, WinningCount } from "./defines/GomokuConstant";
 import { GomokuPieceType } from "./defines/GomokuPieceType";
 import { GomokuState } from "./defines/GomokuState";
+import { ZobristHasher } from "./engine/ZobristHasher";
 
 export class Gomoku {
     private boardSize: number;
     public board: number[];
     public currentPlayer: number = 1;
     protected moves: number[] = [];
+    protected hasher: ZobristHasher;
 
     constructor(boardSize: number) {
         this.boardSize = boardSize;
         this.board = Array(this.boardSize * this.boardSize).fill(0);
-
+        this.hasher = new ZobristHasher(this.boardSize);
         // fill center with a blocker
         this.blockCenter();
     }
 
     private blockCenter() {
-        this.board[this.center()] = GomokuPieceType.BLOCKER;
+        const index = this.center();
+        this.board[index] = GomokuPieceType.BLOCKER;
+        this.hasher.setValue(index, GomokuPieceType.BLOCKER);
     }
 
     public center(): number {
@@ -31,10 +35,6 @@ export class Gomoku {
 
     public getValueAt(index: number): number {
         return this.board[index];
-    }
-
-    private setValueAt(index: number, value: number) {
-        this.board[index] = value;
     }
 
     public isInBounds(row: number, col: number): boolean {
@@ -52,6 +52,7 @@ export class Gomoku {
         this.board = Array(this.boardSize * this.boardSize).fill(0);
         this.currentPlayer = 1;
         this.moves = [];
+        this.hasher.clear();
         this.blockCenter();
     }
 
@@ -63,6 +64,7 @@ export class Gomoku {
         if (move < 0 || move >= this.board.length) return false;
         if (this.board[move] !== GomokuPieceType.EMPTY) return false;
         this.board[move] = this.currentPlayer;
+        this.hasher.setValue(move, this.currentPlayer);
         this.currentPlayer = -this.currentPlayer;
         this.moves.push(move);
         return true;
@@ -73,8 +75,12 @@ export class Gomoku {
         for (var i = 0; i < nMoves; i++) {
             var lastMove = this.moves.pop() || -1;
             if (lastMove >= 0) {
-                this.board[lastMove] = 0;
-                this.currentPlayer = -this.currentPlayer;
+                const value = this.board[lastMove];
+                if (value !== 0) {
+                    this.board[lastMove] = 0;
+                    this.currentPlayer = -this.currentPlayer;
+                    this.hasher.clearValue(lastMove, value);
+                }
             }
         }
 
@@ -144,7 +150,8 @@ export class Gomoku {
             board: this.board,
             boardSize: this.boardSize,
             currentPlayer: this.currentPlayer,
-            lastMove: this.getLastMove()
+            lastMove: this.getLastMove(),
+            hashser: this.hasher
         }
     }
 }
